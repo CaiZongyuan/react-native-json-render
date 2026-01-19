@@ -1,50 +1,108 @@
-# Welcome to your Expo app 👋
+# Expo JSON Render
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+基于 Expo Router 的 React Native 应用，支持 JSON 渲染和 AI 聊天功能。
 
-## Get started
+## 技术栈
 
-1. Install dependencies
+- **Expo SDK** ~54.0.31 (React Native 0.81.5)
+- **React** 19.1.0
+- **Expo Router** v6 (文件路由 + Native Tabs 导航)
+- **@json-render/core** & **@json-render/react** - JSON 渲染
+- **Vercel AI SDK** - AI 聊天集成
+- **GLM-4.7** - 智谱 AI 大模型
+- **TypeScript** (严格模式)
+- **Bun** - 包管理器
 
-   ```bash
-   npm install
-   ```
+## 开始使用
 
-2. Start the app
+### 环境准备
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. 安装依赖：
 
 ```bash
-npm run reset-project
+bun install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. 配置环境变量：
 
-## Learn more
+```bash
+cp .env.example .env
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+编辑 `.env` 文件，填入你的 API 密钥：
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```
+GLM_API_KEY=your_api_key_here
+```
 
-## Join the community
+### 开发
 
-Join our community of developers creating universal apps.
+```bash
+# 启动开发服务器
+bun start
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# 指定平台启动
+bun run android    # Android
+bun run ios        # iOS
+bun run web        # Web
+```
+
+## 项目结构
+
+```
+expo-json-render/
+├── src/
+│   ├── app/                    # Expo Router 文件路由
+│   │   ├── _layout.tsx        # 根布局
+│   │   ├── (tabs)/            # 标签页导航组
+│   │   │   ├── _layout.tsx    # 标签页布局
+│   │   │   ├── index.tsx      # 首页
+│   │   │   ├── render/        # JSON 渲染功能
+│   │   │   └── chatbot/       # AI 聊天功能
+│   │   └── api/               # API 路由
+│   │       └── chat+api.ts    # 聊天流式接口
+│   └── utils/                 # 工具函数
+│       └── urlGenerator.ts    # API URL 生成
+├── assets/
+│   └── images/                # 应用图标、启动页
+├── .env                       # 环境变量（不提交）
+├── .env.example              # 环境变量模板
+└── [配置文件]
+```
+
+## 功能说明
+
+### 标签页导航
+
+- **首页** - 应用主页面
+- **渲染** - JSON 渲染功能
+- **聊天机器人** - AI 对话界面
+
+### AI 聊天
+
+集成智谱 GLM-4.7 大模型，支持流式响应：
+
+- API 端点：`/api/chat`
+- 使用 Vercel AI SDK 实现流式传输
+- 需配置 `GLM_API_KEY` 环境变量
+
+### API URL 配置
+
+`urlGenerator.ts` 工具自动处理 API URL 构建：
+
+- **开发环境**：使用 `Constants.experienceUrl` 构建本地 API URL
+- **生产环境**：需配置 `EXPO_PUBLIC_API_BASE_URL` 环境变量
+
+## 环境变量
+
+| 变量                       | 说明                  | 必填 |
+| -------------------------- | --------------------- | ---- |
+| `GLM_API_KEY`              | 智谱 AI API 密钥      | 是   |
+| `EXPO_PUBLIC_API_BASE_URL` | 生产环境 API 基础 URL | 否   |
+
+## Expo 实验性功能
+
+- New Architecture
+- Typed Routes
+- React Compiler
+- Static Web Output
