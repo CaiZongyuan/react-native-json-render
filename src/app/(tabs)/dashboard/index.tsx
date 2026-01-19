@@ -11,14 +11,7 @@ import {
 import { createSystemPrompt } from "@/src/lib/dashboard/systemPrompt";
 import { generateAPIUrl } from "@/src/utils/urlGenerator";
 import { useChat } from "@ai-sdk/react";
-import {
-  ActionProvider,
-  DataProvider,
-  Renderer,
-  useActions,
-  ValidationProvider,
-  VisibilityProvider,
-} from "@json-render/react";
+import { Renderer, useActions } from "@json-render/react";
 import { DefaultChatTransport } from "ai";
 import { fetch as expoFetch } from "expo/fetch";
 import React, {
@@ -38,14 +31,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-const ACTION_HANDLERS = {
-  refresh_data: () => Alert.alert("Action", "Refreshing data..."),
-  apply_filter: () => Alert.alert("Action", "Applying filters..."),
-  view_details: (params: Record<string, unknown>) =>
-    Alert.alert("Details", JSON.stringify(params, null, 2)),
-};
 
 const QUICK_PROMPTS = [
   "Revenue dashboard with metrics and chart",
@@ -179,7 +164,9 @@ export default function Dashboard() {
       doneBannerTimeoutRef.current = setTimeout(() => {
         setShowDoneBanner(false);
       }, 2000);
-    }, [stop, reset, setMessages]);
+    },
+    [stop, reset, setMessages],
+  );
 
   const clear = useCallback(() => {
     stop();
@@ -267,339 +254,325 @@ export default function Dashboard() {
   }, [parseError, error, hasElements]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#0b0f19" }}>
-      <DataProvider initialData={INITIAL_DATA}>
-        <VisibilityProvider>
-          <ActionProvider handlers={ACTION_HANDLERS}>
-            <ValidationProvider>
-              <RNConfirmDialogManager />
-              <View style={{ flex: 1, padding: 16 }}>
-                <View>
-                  <Text
-                    style={{ color: "#e5e7eb", fontSize: 24, fontWeight: 800 }}
-                  >
-                    Render
-                  </Text>
-                  <Text style={{ color: "#9ca3af", marginTop: 6 }}>
-                    {headerSubtitle}
-                  </Text>
-                </View>
+    <>
+      <RNConfirmDialogManager />
+      <View style={{ flex: 1, padding: 16 }}>
+        <View>
+          <Text style={{ color: "#e5e7eb", fontSize: 24, fontWeight: 800 }}>
+            Render
+          </Text>
+          <Text style={{ color: "#9ca3af", marginTop: 6 }}>
+            {headerSubtitle}
+          </Text>
+        </View>
 
-                <View style={{ flexDirection: "row", marginTop: 12 }}>
-                  <TextInput
-                    value={prompt}
-                    onChangeText={setPrompt}
-                    placeholder="Describe a revenue dashboard..."
-                    placeholderTextColor="#9ca3af"
-                    editable={!isStreaming}
-                    style={{
-                      flex: 1,
-                      backgroundColor: "#0f172a",
-                      borderColor: "#243041",
-                      borderWidth: 1,
-                      borderRadius: 12,
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      color: "#e5e7eb",
-                    }}
-                    onSubmitEditing={(e) => {
-                      e.preventDefault();
-                      start();
-                    }}
-                  />
-                  <Pressable
-                    onPress={start}
-                    disabled={isStreaming || !prompt.trim()}
-                    style={{
-                      marginLeft: 10,
-                      paddingVertical: 10,
-                      paddingHorizontal: 14,
-                      borderRadius: 12,
-                      backgroundColor: "#e5e7eb",
-                      opacity: isStreaming || !prompt.trim() ? 0.6 : 1,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={{ color: "#0b0f19", fontWeight: 800 }}>
-                      {isStreaming ? "..." : "Generate"}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={clear}
-                    style={{
-                      marginLeft: 10,
-                      paddingVertical: 10,
-                      paddingHorizontal: 14,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: "#243041",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={{ color: "#e5e7eb", fontWeight: 800 }}>
-                      Clear
-                    </Text>
-                  </Pressable>
-                </View>
+        <View style={{ flexDirection: "row", marginTop: 12 }}>
+          <TextInput
+            value={prompt}
+            onChangeText={setPrompt}
+            placeholder="Describe a revenue dashboard..."
+            placeholderTextColor="#9ca3af"
+            editable={!isStreaming}
+            style={{
+              flex: 1,
+              backgroundColor: "#0f172a",
+              borderColor: "#243041",
+              borderWidth: 1,
+              borderRadius: 12,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              color: "#e5e7eb",
+            }}
+            onSubmitEditing={(e) => {
+              e.preventDefault();
+              start();
+            }}
+          />
+          <Pressable
+            onPress={start}
+            disabled={isStreaming || !prompt.trim()}
+            style={{
+              marginLeft: 10,
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 12,
+              backgroundColor: "#e5e7eb",
+              opacity: isStreaming || !prompt.trim() ? 0.6 : 1,
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "#0b0f19", fontWeight: 800 }}>
+              {isStreaming ? "..." : "Generate"}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={clear}
+            style={{
+              marginLeft: 10,
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: "#243041",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "#e5e7eb", fontWeight: 800 }}>Clear</Text>
+          </Pressable>
+        </View>
 
-                <View
+        <View
+          style={{
+            flexDirection: "row",
+            marginTop: 10,
+            alignItems: "center",
+          }}
+        >
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flex: 1 }}
+          >
+            {QUICK_PROMPTS.map((p) => (
+              <Pressable
+                key={p}
+                disabled={isStreaming}
+                onPress={() => setPrompt(p)}
+                style={({ pressed }) => ({
+                  marginRight: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 10,
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor: "#243041",
+                  backgroundColor: pressed ? "#0f172a" : "transparent",
+                  opacity: isStreaming ? 0.5 : 1,
+                })}
+              >
+                <Text
                   style={{
-                    flexDirection: "row",
-                    marginTop: 10,
-                    alignItems: "center",
+                    color: "#e5e7eb",
+                    fontWeight: 700,
+                    fontSize: 12,
                   }}
                 >
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={{ flex: 1 }}
-                  >
-                    {QUICK_PROMPTS.map((p) => (
-                      <Pressable
-                        key={p}
-                        disabled={isStreaming}
-                        onPress={() => setPrompt(p)}
-                        style={({ pressed }) => ({
-                          marginRight: 8,
-                          paddingVertical: 8,
-                          paddingHorizontal: 10,
-                          borderRadius: 999,
-                          borderWidth: 1,
-                          borderColor: "#243041",
-                          backgroundColor: pressed ? "#0f172a" : "transparent",
-                          opacity: isStreaming ? 0.5 : 1,
-                        })}
-                      >
-                        <Text
-                          style={{
-                            color: "#e5e7eb",
-                            fontWeight: 700,
-                            fontSize: 12,
-                          }}
-                        >
-                          {p}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
+                  {p}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
 
-                  <Pressable
-                    onPress={() => loadMock("dashboard")}
-                    style={{
-                      marginLeft: 10,
-                      paddingVertical: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: "#243041",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#e5e7eb",
-                        fontWeight: 800,
-                        fontSize: 12,
-                      }}
-                    >
-                      Mock
-                    </Text>
-                  </Pressable>
+          <Pressable
+            onPress={() => loadMock("dashboard")}
+            style={{
+              marginLeft: 10,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: "#243041",
+            }}
+          >
+            <Text
+              style={{
+                color: "#e5e7eb",
+                fontWeight: 800,
+                fontSize: 12,
+              }}
+            >
+              Mock
+            </Text>
+          </Pressable>
 
-                  <Pressable
-                    onPress={() => setIsOutputSheetOpen(true)}
-                    style={{
-                      marginLeft: 10,
-                      paddingVertical: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: "#243041",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#e5e7eb",
-                        fontWeight: 800,
-                        fontSize: 12,
-                      }}
-                    >
-                      AI JSON
-                    </Text>
-                  </Pressable>
-                </View>
+          <Pressable
+            onPress={() => setIsOutputSheetOpen(true)}
+            style={{
+              marginLeft: 10,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: "#243041",
+            }}
+          >
+            <Text
+              style={{
+                color: "#e5e7eb",
+                fontWeight: 800,
+                fontSize: 12,
+              }}
+            >
+              AI JSON
+            </Text>
+          </Pressable>
+        </View>
 
-                {showDoneBanner && (
-                  <View style={styles.doneBanner}>
-                    <Text style={styles.doneBannerText}>{doneBannerText}</Text>
-                    <Pressable onPress={() => setIsOutputSheetOpen(true)}>
-                      <Text style={styles.doneBannerLink}>View output</Text>
-                    </Pressable>
-                  </View>
-                )}
+        {showDoneBanner && (
+          <View style={styles.doneBanner}>
+            <Text style={styles.doneBannerText}>{doneBannerText}</Text>
+            <Pressable onPress={() => setIsOutputSheetOpen(true)}>
+              <Text style={styles.doneBannerLink}>View output</Text>
+            </Pressable>
+          </View>
+        )}
 
-                <ScrollView
-                  style={{ flex: 1, marginTop: 12 }}
-                  contentContainerStyle={{ paddingBottom: 24 }}
-                >
-                  {!!tree && !tree.root && (
-                    <View
-                      style={{
-                        borderRadius: 14,
-                        borderWidth: 1,
-                        borderColor: "#7f1d1d",
-                        padding: 12,
-                        backgroundColor: "#3a1414",
-                        marginBottom: 12,
-                      }}
-                    >
-                      <Text style={{ color: "#fecaca", fontWeight: 800 }}>
-                        Tree has no root yet
-                      </Text>
-                      <Text style={{ color: "#fecaca", marginTop: 6 }}>
-                        Open AI JSON to inspect patch output.
-                      </Text>
-                    </View>
-                  )}
+        <ScrollView
+          style={{ flex: 1, marginTop: 12 }}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          {!!tree && !tree.root && (
+            <View
+              style={{
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: "#7f1d1d",
+                padding: 12,
+                backgroundColor: "#3a1414",
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ color: "#fecaca", fontWeight: 800 }}>
+                Tree has no root yet
+              </Text>
+              <Text style={{ color: "#fecaca", marginTop: 6 }}>
+                Open AI JSON to inspect patch output.
+              </Text>
+            </View>
+          )}
 
-                  {!hasElements ? (
-                    <View
-                      style={{
-                        borderRadius: 14,
-                        borderWidth: 1,
-                        borderColor: "#243041",
-                        padding: 16,
-                        backgroundColor: "#111827",
-                      }}
-                    >
-                      <Text style={{ color: "#9ca3af" }}>
-                        Try: &quot;Revenue dashboard with metrics and chart&quot;
-                      </Text>
-                      <Text style={{ color: "#9ca3af", marginTop: 6 }}>
-                        Or: &quot;Recent transactions table&quot;
-                      </Text>
-                    </View>
-                  ) : (
-                    <Renderer
-                      tree={tree}
-                      registry={dashboardRegistry}
-                      loading={isStreaming}
-                      fallback={UnknownComponent}
-                    />
-                  )}
-                </ScrollView>
-              </View>
+          {!hasElements ? (
+            <View
+              style={{
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: "#243041",
+                padding: 16,
+                backgroundColor: "#111827",
+              }}
+            >
+              <Text style={{ color: "#9ca3af" }}>
+                Try: &quot;Revenue dashboard with metrics and chart&quot;
+              </Text>
+              <Text style={{ color: "#9ca3af", marginTop: 6 }}>
+                Or: &quot;Recent transactions table&quot;
+              </Text>
+            </View>
+          ) : (
+            <Renderer
+              tree={tree}
+              registry={dashboardRegistry}
+              loading={isStreaming}
+              fallback={UnknownComponent}
+            />
+          )}
+        </ScrollView>
+      </View>
 
-              <Modal
-                visible={isOutputSheetOpen}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setIsOutputSheetOpen(false)}
+      <Modal
+        visible={isOutputSheetOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsOutputSheetOpen(false)}
+      >
+        <Pressable
+          style={styles.sheetBackdrop}
+          onPress={() => setIsOutputSheetOpen(false)}
+        />
+        <View style={styles.sheet}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>AI Output</Text>
+            <Pressable onPress={() => setIsOutputSheetOpen(false)}>
+              <Text style={styles.sheetClose}>Close</Text>
+            </Pressable>
+          </View>
+
+          <View style={{ flexDirection: "row", marginTop: 10 }}>
+            <Pressable
+              onPress={() => loadMock("dashboard")}
+              style={[styles.sheetTab, { marginRight: 8 }]}
+            >
+              <Text style={styles.sheetTabText}>Load mock dashboard</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => loadMock("table")}
+              style={styles.sheetTab}
+            >
+              <Text style={styles.sheetTabText}>Load mock table</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.sheetTabs}>
+            <Pressable
+              onPress={() => setOutputTab("patches")}
+              style={[
+                styles.sheetTab,
+                outputTab === "patches" && styles.sheetTabActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.sheetTabText,
+                  outputTab === "patches" && styles.sheetTabTextActive,
+                ]}
               >
-                <Pressable
-                  style={styles.sheetBackdrop}
-                  onPress={() => setIsOutputSheetOpen(false)}
-                />
-                <View style={styles.sheet}>
-                  <View style={styles.sheetHeader}>
-                    <Text style={styles.sheetTitle}>AI Output</Text>
-                    <Pressable onPress={() => setIsOutputSheetOpen(false)}>
-                      <Text style={styles.sheetClose}>Close</Text>
-                    </Pressable>
-                  </View>
+                Patches
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setOutputTab("tree")}
+              style={[
+                styles.sheetTab,
+                outputTab === "tree" && styles.sheetTabActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.sheetTabText,
+                  outputTab === "tree" && styles.sheetTabTextActive,
+                ]}
+              >
+                Tree
+              </Text>
+            </Pressable>
+          </View>
 
-                  <View style={{ flexDirection: "row", marginTop: 10 }}>
-                    <Pressable
-                      onPress={() => loadMock("dashboard")}
-                      style={[styles.sheetTab, { marginRight: 8 }]}
-                    >
-                      <Text style={styles.sheetTabText}>
-                        Load mock dashboard
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => loadMock("table")}
-                      style={styles.sheetTab}
-                    >
-                      <Text style={styles.sheetTabText}>Load mock table</Text>
-                    </Pressable>
-                  </View>
+          <Text style={styles.sheetMeta}>
+            Status: {status}
+            {parseError ? ` · parseError: ${parseError}` : ""}
+            {treeStats ? ` · elements: ${treeStats.total}` : ""}
+            {treeStats ? ` · reachable: ${treeStats.reachable}` : ""}
+            {treeStats ? ` · orphans: ${treeStats.orphanCount}` : ""}
+            {treeStats && treeStats.missingChildRefs.length
+              ? ` · missingChildren: ${treeStats.missingChildRefs.length}`
+              : ""}
+          </Text>
 
-                  <View style={styles.sheetTabs}>
-                    <Pressable
-                      onPress={() => setOutputTab("patches")}
-                      style={[
-                        styles.sheetTab,
-                        outputTab === "patches" && styles.sheetTabActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.sheetTabText,
-                          outputTab === "patches" && styles.sheetTabTextActive,
-                        ]}
-                      >
-                        Patches
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setOutputTab("tree")}
-                      style={[
-                        styles.sheetTab,
-                        outputTab === "tree" && styles.sheetTabActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.sheetTabText,
-                          outputTab === "tree" && styles.sheetTabTextActive,
-                        ]}
-                      >
-                        Tree
-                      </Text>
-                    </Pressable>
-                  </View>
+          {treeStats && treeStats.missingChildRefs.length > 0 && (
+            <Text style={[styles.sheetMeta, { marginTop: 6 }]}>
+              Missing refs (sample):{" "}
+              {treeStats.missingChildRefs
+                .slice(0, 3)
+                .map((r) => `${r.parent}->${r.child}`)
+                .join(", ")}
+              {treeStats.missingChildRefs.length > 3 ? " ..." : ""}
+            </Text>
+          )}
 
-                  <Text style={styles.sheetMeta}>
-                    Status: {status}
-                    {parseError ? ` · parseError: ${parseError}` : ""}
-                    {treeStats ? ` · elements: ${treeStats.total}` : ""}
-                    {treeStats ? ` · reachable: ${treeStats.reachable}` : ""}
-                    {treeStats ? ` · orphans: ${treeStats.orphanCount}` : ""}
-                    {treeStats && treeStats.missingChildRefs.length
-                      ? ` · missingChildren: ${treeStats.missingChildRefs.length}`
-                      : ""}
-                  </Text>
-
-                  {treeStats && treeStats.missingChildRefs.length > 0 && (
-                    <Text style={[styles.sheetMeta, { marginTop: 6 }]}>
-                      Missing refs (sample):{" "}
-                      {treeStats.missingChildRefs
-                        .slice(0, 3)
-                        .map((r) => `${r.parent}->${r.child}`)
-                        .join(", ")}
-                      {treeStats.missingChildRefs.length > 3 ? " ..." : ""}
-                    </Text>
-                  )}
-
-                  <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ paddingBottom: 24 }}
-                  >
-                    <Text selectable style={styles.sheetBodyText}>
-                      {outputTab === "patches"
-                        ? assistantOutput || "(No output yet)"
-                        : tree
-                          ? JSON.stringify(tree, null, 2)
-                          : "(No tree yet)"}
-                    </Text>
-                  </ScrollView>
-                </View>
-              </Modal>
-            </ValidationProvider>
-          </ActionProvider>
-        </VisibilityProvider>
-      </DataProvider>
-    </SafeAreaView>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 24 }}
+          >
+            <Text selectable style={styles.sheetBodyText}>
+              {outputTab === "patches"
+                ? assistantOutput || "(No output yet)"
+                : tree
+                  ? JSON.stringify(tree, null, 2)
+                  : "(No tree yet)"}
+            </Text>
+          </ScrollView>
+        </View>
+      </Modal>
+    </>
   );
 }
 
