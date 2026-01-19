@@ -11,10 +11,19 @@ A React Native app built with Expo Router featuring AI-powered JSON dashboard ge
 - **Expo Router** v6 (file-based routing + Native Tabs navigation)
 - **@json-render/core** & **@json-render/react** - JSON-driven UI rendering
 - **Vercel AI SDK** - AI chat integration
-- **GLM-4.7** - Zhipu AI large language model
+- **GLM-4.7** - Zhipu AI large language model (swappable with other models)
 - **Zod** - Component schema validation
 - **TypeScript** (strict mode)
 - **Bun** - Package manager
+
+## References
+
+This project is inspired by the following excellent resources:
+
+- [vercel-labs/json-render](https://github.com/vercel-labs/json-render) - Core library for JSON-driven UI rendering
+- [Vercel AI SDK - Expo Getting Started](https://ai-sdk.dev/docs/getting-started/expo) - Guide for integrating AI SDK with Expo
+- [Expo Documentation](https://docs.expo.dev/) - Official Expo development framework docs
+- [Vercel AI SDK - Choosing a Provider](https://ai-sdk.dev/docs/getting-started/choosing-a-provider) - Multiple AI model providers supported
 
 ## Features
 
@@ -63,6 +72,23 @@ Integrated with Zhipu GLM-4.7 large language model with streaming support:
 - API endpoint: `/api/chat`
 - Streaming responses via Vercel AI SDK
 - Requires `GLM_API_KEY` environment variable
+
+### Model Replacement
+
+This project uses Zhipu GLM-4.7 by default, but you can easily switch to other AI model providers. The Vercel AI SDK supports various models including:
+
+- **OpenAI**
+- **Anthropic**
+- **Google**
+- **Others** - Mistral, Hugging Face, Azure OpenAI, etc.
+
+**Steps to switch:**
+
+1. Install the corresponding provider package (e.g., `bun add @ai-sdk/openai`)
+2. Modify the model configuration in `src/app/api/chat+api.ts`
+3. Update environment variables (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)
+
+For detailed configuration, see: [Vercel AI SDK - Choosing a Provider](https://ai-sdk.dev/docs/getting-started/choosing-a-provider)
 
 ## Getting Started
 
@@ -198,4 +224,4 @@ The `urlGenerator.ts` utility handles API URL construction:
 
 ## License
 
-Private project.
+MIT
