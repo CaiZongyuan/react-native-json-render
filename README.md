@@ -144,15 +144,23 @@ expo-json-render/
 │   │   ├── (tabs)/            # Tabs navigator group
 │   │   │   ├── _layout.tsx    # Tabs layout
 │   │   │   ├── index.tsx      # Home screen
-│   │   │   ├── render/        # AI Dashboard Generator
-│   │   │   │   ├── index.tsx              # Main interface
-│   │   │   │   ├── registry.tsx            # Component registry (15 components)
-│   │   │   │   ├── dashboardCatalog.ts     # Component schema catalog
-│   │   │   │   ├── useDashboardTreeStream.ts # JSONL stream parser
-│   │   │   │   └── initialData.ts          # Sample data
+│   │   │   ├── dashboard/     # AI Dashboard Generator (page only)
+│   │   │   │   ├── _layout.tsx # Dashboard layout
+│   │   │   │   └── index.tsx   # Main interface
 │   │   │   └── chatbot/       # AI Chat feature
 │   │   └── api/               # API routes
 │   │       └── chat+api.ts    # Chat streaming endpoint
+│   ├── components/            # Reusable components
+│   │   └── dashboard/         # Dashboard components
+│   │       ├── registry.tsx   # Component registry (15 components)
+│   │       └── dashboardCatalog.ts # Component schema catalog
+│   ├── hooks/                 # Custom React hooks
+│   │   └── useDashboardTreeStream.ts # JSONL stream parser
+│   ├── lib/                   # Library code
+│   │   └── dashboard/         # Dashboard library
+│   │       ├── systemPrompt.ts # AI system prompt generator
+│   │       ├── initialData.ts  # Sample data
+│   │       └── mockPatches.ts  # Mock JSONL patches
 │   └── utils/                 # Utility functions
 │       └── urlGenerator.ts    # API URL generation
 ├── assets/
@@ -249,19 +257,22 @@ sequenceDiagram
 ### Code Correspondence
 
 - **Catalog and component list**
-  - `src/app/(tabs)/render/dashboardCatalog.ts`
+  - `src/components/dashboard/dashboardCatalog.ts`
   - Purpose: Defines available components and props schema, exports `componentList` as system prompt's optional component set
+- **System prompt**
+  - `src/lib/dashboard/systemPrompt.ts`
+  - Purpose: Generates the AI system prompt with component details and rules
 - **Initial data and data binding**
-  - `src/app/(tabs)/render/initialData.ts`
+  - `src/lib/dashboard/initialData.ts`
   - Purpose: Provides demo data, AI references data via `valuePath`, `dataPath`, `bindPath`
 - **Registry**
-  - `src/app/(tabs)/render/registry.tsx`
+  - `src/components/dashboard/registry.tsx`
   - Purpose: Maps `type` to RN components, implements minimal usable dashboard UI
 - **JSONL stream parsing and patch application**
-  - `src/app/(tabs)/render/useDashboardTreeStream.ts`
+  - `src/hooks/useDashboardTreeStream.ts`
   - Purpose: Incrementally extracts new content from assistant text, `buffer + split by \n + JSON.parse` to get patch, then `applyPatch` updates tree
 - **Render page and output sheet**
-  - `src/app/(tabs)/render/index.tsx`
+  - `src/app/(tabs)/dashboard/index.tsx`
   - Purpose: Injects system prompt, sends user prompt, renders tree in real-time, displays Patches and Tree via bottom sheet
 
 **Quick Prompt Examples:**
@@ -288,8 +299,8 @@ sequenceDiagram
 
 The app uses `@json-render/react`'s component registry system:
 
-1. **Registry** (`registry.tsx`): Maps component type names to React components
-2. **Catalog** (`dashboardCatalog.ts`): Defines Zod schemas for component props
+1. **Registry** (`src/components/dashboard/registry.tsx`): Maps component type names to React components
+2. **Catalog** (`src/components/dashboard/dashboardCatalog.ts`): Defines Zod schemas for component props
 3. **Renderer**: Renders UI elements from a tree structure with data binding support
 
 **Data Providers:**

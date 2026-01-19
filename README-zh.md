@@ -142,15 +142,23 @@ expo-json-render/
 │   │   ├── (tabs)/            # 标签页导航组
 │   │   │   ├── _layout.tsx    # 标签页布局
 │   │   │   ├── index.tsx      # 首页
-│   │   │   ├── render/        # AI 仪表板生成器
-│   │   │   │   ├── index.tsx              # 主界面
-│   │   │   │   ├── registry.tsx            # 组件注册表（15 个组件）
-│   │   │   │   ├── dashboardCatalog.ts     # 组件 schema 目录
-│   │   │   │   ├── useDashboardTreeStream.ts # JSONL 流解析器
-│   │   │   │   └── initialData.ts          # 示例数据
+│   │   │   ├── dashboard/     # AI 仪表板生成器（仅页面）
+│   │   │   │   ├── _layout.tsx # 仪表板布局
+│   │   │   │   └── index.tsx   # 主界面
 │   │   │   └── chatbot/       # AI 聊天功能
 │   │   └── api/               # API 路由
 │   │       └── chat+api.ts    # 聊天流式接口
+│   ├── components/            # 可复用组件
+│   │   └── dashboard/         # 仪表板组件
+│   │       ├── registry.tsx   # 组件注册表（15 个组件）
+│   │       └── dashboardCatalog.ts # 组件 schema 目录
+│   ├── hooks/                 # 自定义 React hooks
+│   │   └── useDashboardTreeStream.ts # JSONL 流解析器
+│   ├── lib/                   # 库代码
+│   │   └── dashboard/         # 仪表板库
+│   │       ├── systemPrompt.ts # AI 系统提示词生成器
+│   │       ├── initialData.ts  # 示例数据
+│   │       └── mockPatches.ts  # 模拟 JSONL 补丁
 │   └── utils/                 # 工具函数
 │       └── urlGenerator.ts    # API URL 生成
 ├── assets/
@@ -251,19 +259,22 @@ sequenceDiagram
 ### 代码对应关系
 
 - Catalog 与组件列表
-  - `src/app/(tabs)/render/dashboardCatalog.ts`
+  - `src/components/dashboard/dashboardCatalog.ts`
   - 作用: 定义可用组件与 props schema, 并导出 `componentList` 作为 system prompt 的可选组件集合
+- 系统提示词
+  - `src/lib/dashboard/systemPrompt.ts`
+  - 作用: 生成包含组件详情和规则的 AI 系统提示词
 - 初始数据与 data binding
-  - `src/app/(tabs)/render/initialData.ts`
+  - `src/lib/dashboard/initialData.ts`
   - 作用: 提供 demo data, AI 通过 `valuePath` `dataPath` `bindPath` 引用数据
 - Registry
-  - `src/app/(tabs)/render/registry.tsx`
+  - `src/components/dashboard/registry.tsx`
   - 作用: 把 `type` 映射为 RN 组件, 并实现最小可用的 dashboard UI
 - JSONL 流解析与 patch 应用
-  - `src/app/(tabs)/render/useDashboardTreeStream.ts`
+  - `src/hooks/useDashboardTreeStream.ts`
   - 作用: 从 assistant text 增量提取新增内容, `buffer + split by \\n + JSON.parse` 得到 patch, 然后 `applyPatch` 更新 tree
 - Render 页面与 output sheet
-  - `src/app/(tabs)/render/index.tsx`
+  - `src/app/(tabs)/dashboard/index.tsx`
   - 作用: 注入 system prompt, 发送用户 prompt, 实时渲染 tree, 并用底部 sheet 展示 Patches 与 Tree
 
 **快速提示示例：**
@@ -290,8 +301,8 @@ sequenceDiagram
 
 应用使用 `@json-render/react` 的组件注册系统：
 
-1. **注册表** (`registry.tsx`): 将组件类型名映射到 React 组件
-2. **目录** (`dashboardCatalog.ts`): 定义组件属性的 Zod schema
+1. **注册表** (`src/components/dashboard/registry.tsx`): 将组件类型名映射到 React 组件
+2. **目录** (`src/components/dashboard/dashboardCatalog.ts`): 定义组件属性的 Zod schema
 3. **渲染器**: 从树结构渲染 UI 元素，支持数据绑定
 
 **数据提供器：**

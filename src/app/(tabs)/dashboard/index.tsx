@@ -1,16 +1,33 @@
+import {
+  dashboardRegistry,
+  UnknownComponent,
+} from "@/src/components/dashboard/registry";
+import { useDashboardTreeStream } from "@/src/hooks/useDashboardTreeStream";
+import { INITIAL_DATA } from "@/src/lib/dashboard/initialData";
+import {
+  MOCK_PATCHES_DASHBOARD,
+  MOCK_PATCHES_TABLE_ONLY,
+} from "@/src/lib/dashboard/mockPatches";
+import { createSystemPrompt } from "@/src/lib/dashboard/systemPrompt";
 import { generateAPIUrl } from "@/src/utils/urlGenerator";
+import { useChat } from "@ai-sdk/react";
 import {
   ActionProvider,
   DataProvider,
   Renderer,
+  useActions,
   ValidationProvider,
   VisibilityProvider,
-  useActions,
 } from "@json-render/react";
-import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { fetch as expoFetch } from "expo/fetch";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Alert,
   Modal,
@@ -22,62 +39,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { dashboardRegistry, UnknownComponent } from "./registry";
-import { INITIAL_DATA } from "./initialData";
-import { componentList } from "./dashboardCatalog";
-import { useDashboardTreeStream } from "./useDashboardTreeStream";
-
-const SYSTEM_PROMPT = `You are a dashboard widget generator that outputs JSONL (JSON Lines) patches.
-
-Output ONLY JSON patch lines. No markdown. No code fences. No explanations.
-
-AVAILABLE COMPONENTS:
-${componentList.join(", ")}
-
-COMPONENT DETAILS:
-- Card: { title?: string|null, description?: string|null, padding?: "sm"|"md"|"lg"|null } - Container with optional title
-- Grid: { columns?: 1-4|null, gap?: "sm"|"md"|"lg"|null } - Grid layout
-- Stack: { direction?: "horizontal"|"vertical"|null, gap?: "sm"|"md"|"lg"|null, align?: "start"|"center"|"end"|"stretch"|null } - Flex layout
-- Metric: { label: string, valuePath: string, format?: "currency"|"percent"|"number"|null, trend?: "up"|"down"|"neutral"|null, trendValue?: string|null }
-- Chart: { type: "bar"|"line"|"pie"|"area", dataPath: string, title?: string|null, height?: number|null } - Simplified chart
-- Table: { title?: string|null, dataPath: string, columns: [{ key: string, label: string, format?: "text"|"currency"|"date"|"badge"|null }] } - Simplified table
-- Select: { label?: string|null, bindPath: string, options: [{ value: string, label: string }], placeholder?: string|null } - Simplified select
-- DatePicker: { label?: string|null, bindPath: string, placeholder?: string|null } - Simplified date input
-- Button: { label: string, action: { name: string }, variant?: "primary"|"secondary"|"danger"|"ghost"|null, disabled?: boolean|null }
-- Heading: { text: string, level?: "h1"|"h2"|"h3"|"h4"|null }
-- Text: { content: string, variant?: "body"|"caption"|"label"|null, color?: "default"|"muted"|"success"|"warning"|"danger"|null }
-- Badge: { text: string, variant?: "default"|"success"|"warning"|"danger"|"info"|null }
-- Alert: { type: "info"|"success"|"warning"|"error", title: string, message?: string|null }
-- Divider: { label?: string|null }
-- Empty: { title: string, description?: string|null }
-
-DATA BINDING:
-- valuePath: "/analytics/revenue" (for Metric)
-- dataPath: "/analytics/salesByRegion" (for Chart) or "/analytics/recentTransactions" (for Table)
-- bindPath: "/form/region" or "/form/dateRange" (for Select/DatePicker)
-
-OUTPUT FORMAT (JSONL patches):
-- {"op":"set","path":"/root","value":"root-key"}
-- {"op":"add","path":"/elements/root-key","value":{...}}
-
-ELEMENT STRUCTURE:
-{
-  "key": "unique-key",
-  "type": "ComponentType",
-  "props": { ... },
-  "children": ["child-key-1", "child-key-2"]
-}
-
-RULES:
-1. First set /root to the root element's key
-2. Add each element with a unique key using /elements/{key}
-3. Parent elements list child keys in their "children" array
-4. Stream elements progressively - parent first, then children
-5. Each element must have: key, type, props
-6. children contains STRING KEYS only
-7. Do not output anything except JSON patch lines
-
-Generate JSONL patches now.`;
 
 const ACTION_HANDLERS = {
   refresh_data: () => Alert.alert("Action", "Refreshing data..."),
@@ -129,14 +90,17 @@ function RNConfirmDialogManager() {
   return null;
 }
 
-export default function Render() {
+export default function Dashboard() {
   const [prompt, setPrompt] = useState("");
   const [isOutputSheetOpen, setIsOutputSheetOpen] = useState(false);
   const [outputTab, setOutputTab] = useState<"patches" | "tree">("patches");
   const [showDoneBanner, setShowDoneBanner] = useState(false);
+  const [doneBannerText, setDoneBannerText] = useState("Generation complete");
 
   const prevStatusRef = useRef<string | null>(null);
-  const doneBannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const doneBannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const { messages, setMessages, sendMessage, status, stop, error } = useChat({
     transport: new DefaultChatTransport({
@@ -166,6 +130,7 @@ export default function Render() {
     stop();
     reset();
     setShowDoneBanner(false);
+    setDoneBannerText("Generation complete");
     if (doneBannerTimeoutRef.current) {
       clearTimeout(doneBannerTimeoutRef.current);
       doneBannerTimeoutRef.current = null;
@@ -175,7 +140,7 @@ export default function Render() {
       {
         id: createId("system"),
         role: "system",
-        parts: [{ type: "text", text: SYSTEM_PROMPT }],
+        parts: [{ type: "text", text: createSystemPrompt() }],
       },
     ]);
 
@@ -189,6 +154,33 @@ export default function Render() {
     setPrompt("");
   }, [prompt, stop, reset, setMessages, sendMessage]);
 
+  const loadMock = useCallback(
+    (variant: "dashboard" | "table") => {
+      stop();
+      reset();
+
+      const mockText =
+        variant === "dashboard"
+          ? MOCK_PATCHES_DASHBOARD
+          : MOCK_PATCHES_TABLE_ONLY;
+
+      setMessages([
+        {
+          id: createId("assistant"),
+          role: "assistant",
+          parts: [{ type: "text", text: mockText }],
+        },
+      ]);
+
+      setDoneBannerText("Mock loaded");
+      setShowDoneBanner(true);
+      if (doneBannerTimeoutRef.current)
+        clearTimeout(doneBannerTimeoutRef.current);
+      doneBannerTimeoutRef.current = setTimeout(() => {
+        setShowDoneBanner(false);
+      }, 2000);
+    }, [stop, reset, setMessages]);
+
   const clear = useCallback(() => {
     stop();
     reset();
@@ -197,16 +189,61 @@ export default function Render() {
 
   const hasElements = !!tree && Object.keys(tree.elements).length > 0;
 
+  const treeStats = useMemo(() => {
+    if (!tree) return null;
+
+    const allKeys = Object.keys(tree.elements);
+    const reachable = new Set<string>();
+    const missingChildRefs: { parent: string; child: string }[] = [];
+
+    for (const key of allKeys) {
+      const el = tree.elements[key];
+      const children = el?.children ?? [];
+      for (const childKey of children) {
+        if (!tree.elements[childKey]) {
+          missingChildRefs.push({ parent: key, child: childKey });
+        }
+      }
+    }
+
+    if (tree.root && tree.elements[tree.root]) {
+      const queue: string[] = [tree.root];
+      while (queue.length) {
+        const k = queue.shift()!;
+        if (reachable.has(k)) continue;
+        reachable.add(k);
+        const el = tree.elements[k];
+        const children = el?.children ?? [];
+        for (const childKey of children) {
+          if (tree.elements[childKey] && !reachable.has(childKey)) {
+            queue.push(childKey);
+          }
+        }
+      }
+    }
+
+    const orphanCount = allKeys.filter((k) => !reachable.has(k)).length;
+    return {
+      total: allKeys.length,
+      reachable: reachable.size,
+      orphanCount,
+      missingChildRefs,
+    };
+  }, [tree]);
+
   useEffect(() => {
     const prev = prevStatusRef.current;
     prevStatusRef.current = status;
 
     if (!prev) return;
 
-    const completedNow = (prev === "submitted" || prev === "streaming") && status === "ready";
+    const completedNow =
+      (prev === "submitted" || prev === "streaming") && status === "ready";
     if (completedNow && hasElements && !parseError && !error) {
+      setDoneBannerText("Generation complete");
       setShowDoneBanner(true);
-      if (doneBannerTimeoutRef.current) clearTimeout(doneBannerTimeoutRef.current);
+      if (doneBannerTimeoutRef.current)
+        clearTimeout(doneBannerTimeoutRef.current);
       doneBannerTimeoutRef.current = setTimeout(() => {
         setShowDoneBanner(false);
       }, 2500);
@@ -238,7 +275,9 @@ export default function Render() {
               <RNConfirmDialogManager />
               <View style={{ flex: 1, padding: 16 }}>
                 <View>
-                  <Text style={{ color: "#e5e7eb", fontSize: 24, fontWeight: 800 }}>
+                  <Text
+                    style={{ color: "#e5e7eb", fontSize: 24, fontWeight: 800 }}
+                  >
                     Render
                   </Text>
                   <Text style={{ color: "#9ca3af", marginTop: 6 }}>
@@ -297,12 +336,24 @@ export default function Render() {
                       justifyContent: "center",
                     }}
                   >
-                    <Text style={{ color: "#e5e7eb", fontWeight: 800 }}>Clear</Text>
+                    <Text style={{ color: "#e5e7eb", fontWeight: 800 }}>
+                      Clear
+                    </Text>
                   </Pressable>
                 </View>
 
-                <View style={{ flexDirection: "row", marginTop: 10, alignItems: "center" }}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    marginTop: 10,
+                    alignItems: "center",
+                  }}
+                >
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ flex: 1 }}
+                  >
                     {QUICK_PROMPTS.map((p) => (
                       <Pressable
                         key={p}
@@ -319,12 +370,40 @@ export default function Render() {
                           opacity: isStreaming ? 0.5 : 1,
                         })}
                       >
-                        <Text style={{ color: "#e5e7eb", fontWeight: 700, fontSize: 12 }}>
+                        <Text
+                          style={{
+                            color: "#e5e7eb",
+                            fontWeight: 700,
+                            fontSize: 12,
+                          }}
+                        >
                           {p}
                         </Text>
                       </Pressable>
                     ))}
                   </ScrollView>
+
+                  <Pressable
+                    onPress={() => loadMock("dashboard")}
+                    style={{
+                      marginLeft: 10,
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: "#243041",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#e5e7eb",
+                        fontWeight: 800,
+                        fontSize: 12,
+                      }}
+                    >
+                      Mock
+                    </Text>
+                  </Pressable>
 
                   <Pressable
                     onPress={() => setIsOutputSheetOpen(true)}
@@ -337,7 +416,13 @@ export default function Render() {
                       borderColor: "#243041",
                     }}
                   >
-                    <Text style={{ color: "#e5e7eb", fontWeight: 800, fontSize: 12 }}>
+                    <Text
+                      style={{
+                        color: "#e5e7eb",
+                        fontWeight: 800,
+                        fontSize: 12,
+                      }}
+                    >
                       AI JSON
                     </Text>
                   </Pressable>
@@ -345,7 +430,7 @@ export default function Render() {
 
                 {showDoneBanner && (
                   <View style={styles.doneBanner}>
-                    <Text style={styles.doneBannerText}>Generation complete</Text>
+                    <Text style={styles.doneBannerText}>{doneBannerText}</Text>
                     <Pressable onPress={() => setIsOutputSheetOpen(true)}>
                       <Text style={styles.doneBannerLink}>View output</Text>
                     </Pressable>
@@ -356,6 +441,26 @@ export default function Render() {
                   style={{ flex: 1, marginTop: 12 }}
                   contentContainerStyle={{ paddingBottom: 24 }}
                 >
+                  {!!tree && !tree.root && (
+                    <View
+                      style={{
+                        borderRadius: 14,
+                        borderWidth: 1,
+                        borderColor: "#7f1d1d",
+                        padding: 12,
+                        backgroundColor: "#3a1414",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Text style={{ color: "#fecaca", fontWeight: 800 }}>
+                        Tree has no root yet
+                      </Text>
+                      <Text style={{ color: "#fecaca", marginTop: 6 }}>
+                        Open AI JSON to inspect patch output.
+                      </Text>
+                    </View>
+                  )}
+
                   {!hasElements ? (
                     <View
                       style={{
@@ -367,10 +472,10 @@ export default function Render() {
                       }}
                     >
                       <Text style={{ color: "#9ca3af" }}>
-                        Try: "Revenue dashboard with metrics and chart"
+                        Try: &quot;Revenue dashboard with metrics and chart&quot;
                       </Text>
                       <Text style={{ color: "#9ca3af", marginTop: 6 }}>
-                        Or: "Recent transactions table"
+                        Or: &quot;Recent transactions table&quot;
                       </Text>
                     </View>
                   ) : (
@@ -399,6 +504,23 @@ export default function Render() {
                     <Text style={styles.sheetTitle}>AI Output</Text>
                     <Pressable onPress={() => setIsOutputSheetOpen(false)}>
                       <Text style={styles.sheetClose}>Close</Text>
+                    </Pressable>
+                  </View>
+
+                  <View style={{ flexDirection: "row", marginTop: 10 }}>
+                    <Pressable
+                      onPress={() => loadMock("dashboard")}
+                      style={[styles.sheetTab, { marginRight: 8 }]}
+                    >
+                      <Text style={styles.sheetTabText}>
+                        Load mock dashboard
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => loadMock("table")}
+                      style={styles.sheetTab}
+                    >
+                      <Text style={styles.sheetTabText}>Load mock table</Text>
                     </Pressable>
                   </View>
 
@@ -440,10 +562,29 @@ export default function Render() {
                   <Text style={styles.sheetMeta}>
                     Status: {status}
                     {parseError ? ` · parseError: ${parseError}` : ""}
-                    {hasElements ? ` · elements: ${Object.keys(tree?.elements ?? {}).length}` : ""}
+                    {treeStats ? ` · elements: ${treeStats.total}` : ""}
+                    {treeStats ? ` · reachable: ${treeStats.reachable}` : ""}
+                    {treeStats ? ` · orphans: ${treeStats.orphanCount}` : ""}
+                    {treeStats && treeStats.missingChildRefs.length
+                      ? ` · missingChildren: ${treeStats.missingChildRefs.length}`
+                      : ""}
                   </Text>
 
-                  <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
+                  {treeStats && treeStats.missingChildRefs.length > 0 && (
+                    <Text style={[styles.sheetMeta, { marginTop: 6 }]}>
+                      Missing refs (sample):{" "}
+                      {treeStats.missingChildRefs
+                        .slice(0, 3)
+                        .map((r) => `${r.parent}->${r.child}`)
+                        .join(", ")}
+                      {treeStats.missingChildRefs.length > 3 ? " ..." : ""}
+                    </Text>
+                  )}
+
+                  <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ paddingBottom: 24 }}
+                  >
                     <Text selectable style={styles.sheetBodyText}>
                       {outputTab === "patches"
                         ? assistantOutput || "(No output yet)"
