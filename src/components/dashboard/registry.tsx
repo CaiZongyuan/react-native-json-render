@@ -2,7 +2,7 @@ import type { Action } from "@json-render/core";
 import { getByPath } from "@json-render/core";
 import type { ComponentRenderProps, ComponentRegistry } from "@json-render/react";
 import { useData, useDataBinding } from "@json-render/react";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ScrollView,
   Text,
@@ -11,7 +11,11 @@ import {
   Pressable,
   StyleSheet,
   type LayoutChangeEvent,
+  Platform,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 
 type Spacing = "sm" | "md" | "lg";
 
@@ -588,17 +592,85 @@ export function DatePicker({ element }: ComponentRenderProps) {
   };
 
   const [value, setValue] = useDataBinding<string>(normalizePath(bindPath));
+  const [showPicker, setShowPicker] = useState(false);
+
+  // Parse stored value to Date object
+  const parsedDate = useMemo(() => {
+    if (!value) return new Date();
+    try {
+      return new Date(value);
+    } catch {
+      return new Date();
+    }
+  }, [value]);
+
+  const handleChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === "android") {
+      setShowPicker(false);
+    }
+
+    if (event.type === "set" && selectedDate) {
+      // Format as YYYY-MM-DD
+      const formatted = selectedDate.toISOString().split("T")[0];
+      setValue(formatted);
+    }
+  };
+
+  const displayValue = value ?? (placeholder ?? "Select date...");
 
   return (
     <View>
       {!!label && <Text style={styles.mutedText}>{label}</Text>}
-      <TextInput
-        value={value ?? ""}
-        onChangeText={setValue}
-        placeholder={placeholder ?? "YYYY-MM-DD"}
-        placeholderTextColor={color.muted}
+      <Pressable
+        onPress={() => setShowPicker(true)}
         style={[styles.input, { marginTop: 8 }]}
-      />
+      >
+        <Text style={{ color: value ? color.foreground : color.muted }}>
+          {displayValue}
+        </Text>
+      </Pressable>
+
+      {/* Modal wrapper for iOS to prevent layout shift */}
+      {Platform.OS === "ios" && showPicker && (
+        <Modal
+          transparent
+          visible={showPicker}
+          animationType="slide"
+          onRequestClose={() => setShowPicker(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowPicker(false)}
+          >
+            <View style={styles.modalContent}>
+              <DateTimePicker
+                value={parsedDate}
+                mode="date"
+                display="spinner"
+                onChange={handleChange}
+                style={{ width: 320 }}
+              />
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowPicker(false)}
+              >
+                <Text style={styles.modalButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
+      {/* Android: uses native dialog, no modal needed */}
+      {Platform.OS === "android" && showPicker && (
+        <DateTimePicker
+          value={parsedDate}
+          mode="date"
+          display="default"
+          onChange={handleChange}
+        />
+      )}
     </View>
   );
 }
@@ -677,5 +749,31 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     color: color.foreground,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: color.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 40,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  modalButton: {
+    backgroundColor: color.foreground,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  modalButtonText: {
+    color: color.background,
+    fontWeight: 700,
+    fontSize: 16,
   },
 });

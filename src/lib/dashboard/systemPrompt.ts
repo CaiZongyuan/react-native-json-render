@@ -1,4 +1,5 @@
 import { componentList } from "@/src/components/dashboard/dashboardCatalog";
+import { MOCK_PATCHES_DASHBOARD } from "@/src/lib/dashboard/mockPatches";
 
 export function createSystemPrompt(): string {
   return `You are a dashboard widget generator that outputs JSONL (JSON Lines) patches.
@@ -54,6 +55,9 @@ RULES:
 5. Each element must have: key, type, props
 6. children contains STRING KEYS only
 7. Do not output anything except JSON patch lines
+
+EXAMPLE - Complete Analytics Dashboard (mobile-friendly layout):
+${MOCK_PATCHES_DASHBOARD}
 
 Generate JSONL patches now.`;
 }
