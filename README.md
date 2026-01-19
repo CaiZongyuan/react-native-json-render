@@ -169,6 +169,101 @@ expo-json-render/
 3. Patches are incrementally parsed and applied to a UI tree
 4. Components are rendered via the `@json-render/react` library
 
+## Implementation Details
+
+The Render tab implementation aims to replicate `json-render`'s `examples/dashboard` approach, but with React Native components as the rendering target instead of DOM.
+
+### json-render Principles Overview
+
+The core of json-render is transforming UI from "free text" to "restricted JSON tree":
+
+- **Catalog**: Uses Zod to define allowed component types and props schema - the AI's restricted vocabulary
+- **UI Tree**: Flat structure `UITree` + `UIElement` map, children only reference keys for streaming incremental construction
+- **Registry**: Maps `element.type` to real React components, provides data binding, actions, visibility via providers
+- **Streaming**: AI outputs JSONL patches, client parses patches by line and applies to tree, UI renders in real-time as tree changes
+
+#### Data Flow
+
+```mermaid
+flowchart TD
+  U[User prompt] --> R[Render screen]
+  R --> C[AI SDK useChat]
+  C --> A[API route api chat]
+  A --> M[LLM glm model]
+  M --> S[SSE stream]
+  S --> P[JSONL patches]
+  P --> T[Apply patch to UI tree]
+  T --> V[UITree state]
+  V --> X[json render Renderer]
+  X --> G[Component registry]
+  G --> N[React Native UI]
+```
+
+### Porting to React Native
+
+The key to porting is not modifying core, but handling the rendering target and streaming channel:
+
+1. **Reuse `@json-render/core` and `@json-render/react`**
+   - `@json-render/core` handles types, patch models, data path read/write (pure logic)
+   - `@json-render/react` provides `Renderer`, `DataProvider`, `ActionProvider`, `VisibilityProvider`, `ValidationProvider`
+
+2. **Implement registry with RN components**
+   - Web version's `Card`, `Grid`, `Stack` depend on CSS; RN version uses `View`, `Text`, `Pressable` + Flexbox
+   - `Table` uses `ScrollView horizontal` for simplified display, `Chart` uses simplified bar chart placeholder
+
+3. **Use AI SDK in Expo to consume streaming**
+   - `useChat` + `DefaultChatTransport` + `expo/fetch` for stable stream consumption
+   - Client treats assistant text as "JSONL patch stream", parses by line and updates `UITree`
+
+4. **Replace Confirm UI**
+   - `@json-render/react`'s built-in DOM `ConfirmDialog` doesn't work in RN
+   - This project uses `Alert.alert` to implement `pendingConfirmation` confirm flow
+
+#### Streaming Patch Apply
+
+```mermaid
+sequenceDiagram
+  participant User as User
+  participant UI as Render UI
+  participant Hook as useChat
+  participant API as api chat
+  participant LLM as LLM
+  participant Parser as Patch parser
+  participant Tree as UITree
+  participant Renderer as Renderer
+
+  User->>UI: enter prompt
+  UI->>Hook: sendMessage with system prompt
+  Hook->>API: POST messages
+  API->>LLM: streamText
+  LLM-->>API: SSE chunks
+  API-->>Hook: streaming response
+  Hook-->>UI: assistant text updates
+  UI->>Parser: append to buffer
+  Parser->>Parser: split by newline
+  Parser->>Tree: applyPatch per line
+  Tree-->>Renderer: tree state update
+  Renderer-->>UI: render components
+```
+
+### Code Correspondence
+
+- **Catalog and component list**
+  - `src/app/(tabs)/render/dashboardCatalog.ts`
+  - Purpose: Defines available components and props schema, exports `componentList` as system prompt's optional component set
+- **Initial data and data binding**
+  - `src/app/(tabs)/render/initialData.ts`
+  - Purpose: Provides demo data, AI references data via `valuePath`, `dataPath`, `bindPath`
+- **Registry**
+  - `src/app/(tabs)/render/registry.tsx`
+  - Purpose: Maps `type` to RN components, implements minimal usable dashboard UI
+- **JSONL stream parsing and patch application**
+  - `src/app/(tabs)/render/useDashboardTreeStream.ts`
+  - Purpose: Incrementally extracts new content from assistant text, `buffer + split by \n + JSON.parse` to get patch, then `applyPatch` updates tree
+- **Render page and output sheet**
+  - `src/app/(tabs)/render/index.tsx`
+  - Purpose: Injects system prompt, sends user prompt, renders tree in real-time, displays Patches and Tree via bottom sheet
+
 **Quick Prompt Examples:**
 
 - "Revenue dashboard with metrics and chart" - Revenue dashboard
