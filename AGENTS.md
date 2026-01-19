@@ -1,6 +1,52 @@
+# Expo JSON Render - Project Documentation
+
 This is an Expo React Native project using Expo Router for file-based routing with native tabs navigation.
 
-**Key Technologies:**
+## Directory Structure
+
+```
+expo-json-render/
+├── src/
+│   ├── app/                    # Expo Router file-based routing
+│   │   ├── (tabs)/
+│   │   │   ├── dashboard/      # AI Dashboard Generator (page only)
+│   │   │   │   ├── _layout.tsx
+│   │   │   │   └── index.tsx
+│   │   │   ├── index.tsx       # Home screen
+│   │   │   └── chatbot/        # AI Chatbot
+│   │   └── api/
+│   │       └── chat+api.ts     # Chat streaming endpoint
+│   ├── components/             # Reusable components
+│   │   └── dashboard/
+│   │       ├── registry.tsx
+│   │       └── dashboardCatalog.ts
+│   ├── hooks/                  # Custom React hooks
+│   │   └── useDashboardTreeStream.ts
+│   ├── lib/                    # Library code
+│   │   └── dashboard/
+│   │       ├── systemPrompt.ts
+│   │       ├── initialData.ts
+│   │       └── mockPatches.ts
+│   └── utils/
+│       └── urlGenerator.ts
+├── assets/
+├── .env
+├── .env.example
+├── README.md                   # English documentation
+└── README-zh.md                # Chinese documentation
+```
+
+## Project Structure Principles
+
+**Important**: The `app/` directory is reserved for Expo Router file-based routing and should only contain page files. All business logic, components, hooks, and utilities must be placed in their appropriate directories:
+
+- **`app/`** - Route pages and layouts only
+- **`components/`** - Reusable UI components
+- **`hooks/`** - Custom React hooks
+- **`lib/`** - Library code and business logic
+- **`utils/`** - Utility functions
+
+## Key Technologies
 
 - Expo SDK ~54.0.31 with React Native 0.81.5
 - React 19.1.0
@@ -37,54 +83,24 @@ The app uses Expo Router's file system based routing with Native Tabs:
 - `src/app/_layout.tsx` - Root layout using Slot
 - `src/app/(tabs)/_layout.tsx` - Tabs layout with 3 tabs
 - `src/app/(tabs)/index.tsx` - Home screen (route: `/`)
-- `src/app/(tabs)/render/index.tsx` - Render screen with AI-powered dashboard generator (route: `/render`)
+- `src/app/(tabs)/dashboard/index.tsx` - Dashboard screen with AI-powered generator (route: `/dashboard`)
 - `src/app/(tabs)/chatbot/index.tsx` - Simple AI chatbot (route: `/chatbot`)
 
 ### API Routes
 
 - `src/app/api/chat+api.ts` - POST endpoint for AI chat streaming
 
-### Directory Structure
-
-```
-expo-json-render/
-├── src/
-│   ├── app/                    # Expo Router file-based routing
-│   │   ├── _layout.tsx        # Root layout with Slot
-│   │   ├── (tabs)/            # Tabs navigator group
-│   │   │   ├── _layout.tsx    # Native Tabs layout
-│   │   │   ├── index.tsx      # Home screen
-│   │   │   ├── render/        # AI Dashboard Generator feature
-│   │   │   │   ├── index.tsx              # Main render screen
-│   │   │   │   ├── registry.tsx            # Component registry (15 components)
-│   │   │   │   ├── dashboardCatalog.ts     # Component schema catalog
-│   │   │   │   ├── useDashboardTreeStream.ts # JSONL stream parser
-│   │   │   │   └── initialData.ts          # Sample analytics data
-│   │   │   └── chatbot/       # AI Chatbot feature
-│   │   └── api/               # API routes
-│   │       └── chat+api.ts    # Chat streaming endpoint
-│   └── utils/                 # Utility functions
-│       └── urlGenerator.ts    # API URL generation
-├── assets/
-│   └── images/                # App icons, splash screens, images
-├── docs/                      # Documentation (empty, for future use)
-├── .vscode/                   # VS Code settings
-├── .env                       # Environment variables (not committed)
-├── .env.example              # Environment variables template
-└── [config files]
-```
-
 ## Features
 
 ### Tab Navigation
 
 - **Home** - Main landing page
-- **Render** - AI-powered JSON dashboard generator
+- **Dashboard** - AI-powered JSON dashboard generator
 - **Chatbot** - Simple AI chat interface
 
-### AI Dashboard Generator (Render Tab)
+### AI Dashboard Generator (Dashboard Tab)
 
-The Render feature is a sophisticated AI-powered dashboard generator that uses GLM-4.7 to create React Native UI components from natural language prompts.
+The Dashboard feature is a sophisticated AI-powered dashboard generator that uses GLM-4.7 to create React Native UI components from natural language prompts.
 
 **How it works:**
 
@@ -95,11 +111,13 @@ The Render feature is a sophisticated AI-powered dashboard generator that uses G
 
 **Key Files:**
 
-- `src/app/(tabs)/render/index.tsx` - Main UI with prompt input, quick prompts, and rendering output
-- `src/app/(tabs)/render/registry.tsx` - Component registry with 15 React Native components
-- `src/app/(tabs)/render/dashboardCatalog.ts` - Zod schemas for component validation
-- `src/app/(tabs)/render/useDashboardTreeStream.ts` - Custom hook for parsing JSONL patches
-- `src/app/(tabs)/render/initialData.ts` - Sample data for dashboards
+- `src/app/(tabs)/dashboard/index.tsx` - Main UI with prompt input, quick prompts, and rendering output (page only)
+- `src/components/dashboard/registry.tsx` - Component registry with 15 React Native components
+- `src/components/dashboard/dashboardCatalog.ts` - Zod schemas for component validation
+- `src/hooks/useDashboardTreeStream.ts` - Custom hook for parsing JSONL patches
+- `src/lib/dashboard/systemPrompt.ts` - AI system prompt generator
+- `src/lib/dashboard/initialData.ts` - Sample data for dashboards
+- `src/lib/dashboard/mockPatches.ts` - Mock JSONL patches for testing
 
 **Available Components:**
 
@@ -155,7 +173,7 @@ Simple chat interface with streaming responses using GLM-4.7.
 - API endpoint: `/api/chat`
 - Requires `GLM_API_KEY` environment variable
 
-### Configuration Notes
+## Configuration Notes
 
 **Path Aliases:**
 
@@ -192,8 +210,8 @@ The `urlGenerator.ts` utility handles API URL construction:
 
 The app uses `@json-render/react`'s component registry system:
 
-1. **Registry** (`registry.tsx`): Maps component type names to React components
-2. **Catalog** (`dashboardCatalog.ts`): Defines Zod schemas for component props
+1. **Registry** (`src/components/dashboard/registry.tsx`): Maps component type names to React components
+2. **Catalog** (`src/components/dashboard/dashboardCatalog.ts`): Defines Zod schemas for component props
 3. **Renderer**: Renders UI elements from a tree structure with data binding support
 
 **Data Providers:**
@@ -202,3 +220,46 @@ The app uses `@json-render/react`'s component registry system:
 - `VisibilityProvider` - Controls component visibility
 - `ActionProvider` - Handles button actions with confirmation dialogs
 - `ValidationProvider` - Validates component props against schemas
+
+## Code Style Guidelines
+
+**File Organization:**
+
+- Keep `app/` directory clean - only route pages and layouts
+- Place reusable components in `components/`
+- Place custom hooks in `hooks/`
+- Place business logic in `lib/`
+- Place utilities in `utils/`
+
+**TypeScript:**
+
+- Always use strict mode
+- Define proper types for all props and functions
+- Avoid `any` type
+
+**React Native:**
+
+- Use `View` instead of `div`
+- Use `Text` for all text content
+- Use `Pressable` for buttons and touchable elements
+- Use StyleSheet for styles
+
+## Documentation Maintenance
+
+**When to Update Documentation:**
+
+1. **README.md / README-zh.md** - Update when:
+   - Adding new features visible to users
+   - Changing project structure
+   - Updating configuration requirements
+   - Modifying API endpoints or environment variables
+
+2. **AGENTS.md** - Update when:
+   - Changing directory structure
+   - Adding new architectural patterns
+   - Updating development commands
+   - Modifying key technologies or dependencies
+
+**Documentation Sync:**
+
+Always update both English (README.md) and Chinese (README-zh.md) versions together to keep them in sync.

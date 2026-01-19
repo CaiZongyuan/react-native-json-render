@@ -7,9 +7,9 @@ export default function TabLayout() {
         <Label>Home</Label>
         <Icon sf="book.fill" drawable="custom_android_drawable" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="render">
+      <NativeTabs.Trigger name="dashboard">
         <Icon sf="gear" drawable="custom_settings_drawable" />
-        <Label>Render</Label>
+        <Label>Dashboard</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="chatbot">
         <Icon sf="person" drawable="custom_settings_drawable" />

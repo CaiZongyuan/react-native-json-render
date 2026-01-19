@@ -10,6 +10,7 @@ import {
   View,
   Pressable,
   StyleSheet,
+  type LayoutChangeEvent,
 } from "react-native";
 
 type Spacing = "sm" | "md" | "lg";
@@ -37,6 +38,15 @@ const color = {
   warning: "#f59e0b",
   info: "#60a5fa",
 };
+
+function normalizePath(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed.includes(".") && !trimmed.includes("/")) {
+    return "/" + trimmed.split(".").filter(Boolean).join("/");
+  }
+  return trimmed;
+}
 
 export function UnknownComponent({ element }: ComponentRenderProps) {
   return (
@@ -70,24 +80,48 @@ export function Grid({ element, children }: ComponentRenderProps) {
     gap?: Spacing | null;
   };
 
-  const cols = Math.max(1, Math.min(4, columns ?? 2));
   const gapPx = spacing(gap);
   const items = React.Children.toArray(children);
+  const [containerWidth, setContainerWidth] = React.useState<number>(0);
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (Number.isFinite(w) && w > 0 && w !== containerWidth) {
+      setContainerWidth(w);
+    }
+  };
+
+  const requestedCols = Math.max(1, Math.min(4, columns ?? 2));
+  const cols =
+    containerWidth > 0 && requestedCols > 2 && containerWidth < 360
+      ? 2
+      : containerWidth > 0 && requestedCols > 1 && containerWidth < 260
+        ? 1
+        : requestedCols;
+
+  const itemWidth =
+    containerWidth > 0
+      ? (containerWidth - gapPx * (cols - 1)) / cols
+      : undefined;
 
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", margin: -gapPx / 2 }}>
-      {items.map((child, idx) => (
-        <View
-          // eslint-disable-next-line react/no-array-index-key
-          key={idx}
-          style={{
-            width: `${100 / cols}%`,
-            padding: gapPx / 2,
-          }}
-        >
-          {child}
-        </View>
-      ))}
+    <View onLayout={onLayout} style={{ flexDirection: "row", flexWrap: "wrap" }}>
+      {items.map((child, idx) => {
+        const isEndOfRow = idx % cols === cols - 1;
+        return (
+          <View
+            key={idx}
+            style={{
+              width: itemWidth,
+              marginRight: isEndOfRow ? 0 : gapPx,
+              marginBottom: gapPx,
+              alignSelf: "stretch",
+            }}
+          >
+            {child}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -116,7 +150,6 @@ export function Stack({ element, children }: ComponentRenderProps) {
     <View style={{ flexDirection: isRow ? "row" : "column", alignItems }}>
       {items.map((child, idx) => (
         <View
-          // eslint-disable-next-line react/no-array-index-key
           key={idx}
           style={
             isRow
@@ -269,7 +302,7 @@ export function Metric({ element }: ComponentRenderProps) {
   };
 
   const { data } = useData();
-  const rawValue = getByPath(data, valuePath);
+  const rawValue = getByPath(data, normalizePath(valuePath));
 
   const displayValue = useMemo(() => {
     if (rawValue === null || rawValue === undefined) return "-";
@@ -302,7 +335,16 @@ export function Metric({ element }: ComponentRenderProps) {
   return (
     <View>
       <Text style={styles.mutedText}>{label}</Text>
-      <Text style={{ color: color.foreground, fontSize: 28, fontWeight: 800 }}>
+      <Text
+        numberOfLines={1}
+        ellipsizeMode="tail"
+        style={{
+          color: color.foreground,
+          fontSize: 26,
+          fontWeight: 800,
+          flexShrink: 1,
+        }}
+      >
         {displayValue}
       </Text>
       {(trend || trendValue) && (
@@ -322,8 +364,8 @@ export function Chart({ element }: ComponentRenderProps) {
   };
 
   const { data } = useData();
-  const chartData = getByPath(data, dataPath) as
-    | Array<{ label: string; value: number }>
+  const chartData = getByPath(data, normalizePath(dataPath)) as
+    | { label: string; value: number }[]
     | undefined;
 
   const chartHeight = Math.max(80, Math.min(200, height ?? 120));
@@ -332,7 +374,8 @@ export function Chart({ element }: ComponentRenderProps) {
     return <Text style={styles.mutedText}>No data</Text>;
   }
 
-  const maxValue = Math.max(...chartData.map((d) => d.value), 1);
+  const values = chartData.map((d) => (typeof d.value === "number" ? d.value : Number(d.value)));
+  const maxValue = Math.max(...values.filter((n) => Number.isFinite(n)), 1);
 
   return (
     <View>
@@ -342,21 +385,29 @@ export function Chart({ element }: ComponentRenderProps) {
         </Text>
       )}
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: chartHeight }}>
-        {chartData.map((d) => (
-          <View key={d.label} style={{ flex: 1, alignItems: "center" }}>
+        {chartData.map((d, idx) => {
+          const v = values[idx] ?? 0;
+          const clamped = Number.isFinite(v) ? Math.max(0, v) : 0;
+          const barHeight = Math.max(4, (clamped / maxValue) * chartHeight);
+          return (
+          <View key={d.label} style={{ flex: 1, alignItems: "center", height: "100%" }}>
             <View
               style={{
                 width: "70%",
-                height: `${Math.max(4, (d.value / maxValue) * 100)}%`,
+                height: barHeight,
                 backgroundColor: color.info,
                 borderRadius: 6,
               }}
             />
-            <Text style={[styles.mutedText, { fontSize: 11, marginTop: 6 }]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.mutedText, { fontSize: 11, marginTop: 6, maxWidth: 60 }]}
+            >
               {d.label}
             </Text>
           </View>
-        ))}
+        );
+        })}
       </View>
     </View>
   );
@@ -366,16 +417,21 @@ export function Table({ element }: ComponentRenderProps) {
   const { title, dataPath, columns } = element.props as {
     title?: string | null;
     dataPath: string;
-    columns: Array<{ key: string; label: string; format?: string | null }>;
+    columns: { key: string; label: string; format?: string | null }[];
   };
 
   const { data } = useData();
-  const tableData = getByPath(data, dataPath) as
-    | Array<Record<string, unknown>>
+  const normalizedDataPath = normalizePath(dataPath);
+  const tableData = getByPath(data, normalizedDataPath) as
+    | Record<string, unknown>[]
     | undefined;
 
   if (!Array.isArray(tableData) || tableData.length === 0) {
-    return <Text style={styles.mutedText}>No data</Text>;
+    return (
+      <Text style={styles.mutedText}>
+        No data ({normalizedDataPath})
+      </Text>
+    );
   }
 
   const formatCell = (value: unknown, format?: string | null) => {
@@ -407,8 +463,8 @@ export function Table({ element }: ComponentRenderProps) {
           {title}
         </Text>
       )}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ minWidth: 520 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
+        <View style={{ minWidth: 520, flexGrow: 1 }}>
           <View style={styles.tableHeaderRow}>
             {columns.map((col) => (
               <Text key={col.key} style={styles.tableHeaderCell}>
@@ -417,7 +473,6 @@ export function Table({ element }: ComponentRenderProps) {
             ))}
           </View>
           {tableData.map((row, idx) => (
-            // eslint-disable-next-line react/no-array-index-key
             <View key={idx} style={styles.tableRow}>
               {columns.map((col) => (
                 <Text key={col.key} style={styles.tableCell}>
@@ -484,11 +539,11 @@ export function Select({ element }: ComponentRenderProps) {
   const { label, bindPath, options, placeholder } = element.props as {
     label?: string | null;
     bindPath: string;
-    options: Array<{ value: string; label: string }>;
+    options: { value: string; label: string }[];
     placeholder?: string | null;
   };
 
-  const [value, setValue] = useDataBinding<string>(bindPath);
+  const [value, setValue] = useDataBinding<string>(normalizePath(bindPath));
 
   return (
     <View>
@@ -532,7 +587,7 @@ export function DatePicker({ element }: ComponentRenderProps) {
     placeholder?: string | null;
   };
 
-  const [value, setValue] = useDataBinding<string>(bindPath);
+  const [value, setValue] = useDataBinding<string>(normalizePath(bindPath));
 
   return (
     <View>

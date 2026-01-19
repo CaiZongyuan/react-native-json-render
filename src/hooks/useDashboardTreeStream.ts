@@ -4,14 +4,29 @@ import type { UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 function parsePatchLine(line: string): JsonPatch | null {
-  const trimmed = line.trim();
+  let trimmed = line.trim();
   if (!trimmed) return null;
   if (trimmed.startsWith("```")) return null;
   if (trimmed.startsWith("//")) return null;
 
+  if (trimmed.startsWith("data:")) {
+    trimmed = trimmed.slice("data:".length).trim();
+  }
+
+  trimmed = trimmed.replace(/,+\s*$/, "");
+
   try {
     return JSON.parse(trimmed) as JsonPatch;
   } catch {
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start !== -1 && end !== -1 && end > start) {
+      try {
+        return JSON.parse(trimmed.slice(start, end + 1)) as JsonPatch;
+      } catch {
+        return null;
+      }
+    }
     return null;
   }
 }
@@ -119,9 +134,21 @@ export function useDashboardTreeStream(messages: UIMessage[]): TreeStreamState {
           setParseError(err instanceof Error ? err.message : String(err));
         }
       }
+
+      // If the remaining buffer is a complete JSON object, apply it even without a trailing newline.
+      // This prevents the last patch line from being dropped.
+      const trailingPatch = parsePatchLine(bufferRef.current);
+      if (trailingPatch) {
+        try {
+          currentTreeRef.current = applyPatch(currentTreeRef.current, trailingPatch);
+          setTree({ ...currentTreeRef.current });
+          bufferRef.current = "";
+        } catch (err) {
+          setParseError(err instanceof Error ? err.message : String(err));
+        }
+      }
     }
   }, [messages]);
 
   return { tree, parseError, reset };
 }
-
