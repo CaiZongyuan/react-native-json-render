@@ -1,108 +1,201 @@
 # Expo JSON Render
 
-基于 Expo Router 的 React Native 应用，支持 JSON 渲染和 AI 聊天功能。
+**English | [中文](README-zh.md)**
 
-## 技术栈
+A React Native app built with Expo Router featuring AI-powered JSON dashboard generation and AI chat capabilities.
+
+## Tech Stack
 
 - **Expo SDK** ~54.0.31 (React Native 0.81.5)
 - **React** 19.1.0
-- **Expo Router** v6 (文件路由 + Native Tabs 导航)
-- **@json-render/core** & **@json-render/react** - JSON 渲染
-- **Vercel AI SDK** - AI 聊天集成
-- **GLM-4.7** - 智谱 AI 大模型
-- **TypeScript** (严格模式)
-- **Bun** - 包管理器
+- **Expo Router** v6 (file-based routing + Native Tabs navigation)
+- **@json-render/core** & **@json-render/react** - JSON-driven UI rendering
+- **Vercel AI SDK** - AI chat integration
+- **GLM-4.7** - Zhipu AI large language model
+- **Zod** - Component schema validation
+- **TypeScript** (strict mode)
+- **Bun** - Package manager
 
-## 开始使用
+## Features
 
-### 环境准备
+### AI Dashboard Generator
 
-1. 安装依赖：
+Automatically generate React Native dashboard interfaces from natural language descriptions. Simply enter a prompt like "Revenue dashboard with metrics and chart" and the AI will stream and render the corresponding UI components in real-time.
+
+**Core Features:**
+
+- 15 built-in components (Card, Grid, Stack, Metric, Chart, Table, Button, etc.)
+- JSONL (JSON Lines) incremental rendering with real-time component display
+- Data binding support (valuePath, dataPath, bindPath)
+- Quick prompt templates
+- AI output viewer (Patches/Tree dual view)
+
+**Available Components:**
+
+| Component  | Description                      | Main Props                       |
+| ---------- | -------------------------------- | -------------------------------- |
+| Card       | Container with title/description | title, description, padding      |
+| Grid       | Grid layout (1-4 columns)        | columns, gap                     |
+| Stack      | Flex layout container            | direction, gap, align            |
+| Metric     | Numeric metric display           | label, valuePath, format, trend  |
+| Chart      | Bar chart visualization          | type, dataPath, title, height    |
+| Table      | Data table                       | title, dataPath, columns         |
+| Button     | Action button                    | label, variant, action, disabled |
+| Select     | Radio-style selector             | label, bindPath, options         |
+| DatePicker | Date input field                 | label, bindPath, placeholder     |
+| Heading    | Heading text (h1-h4)             | text, level                      |
+| Text       | Paragraph text                   | content, variant, color          |
+| Badge      | Status badge                     | text, variant                    |
+| Alert      | Alert banner                     | type, title, message             |
+| Divider    | Section divider                  | label                            |
+| Empty      | Empty state display              | title, description               |
+
+### Tab Navigation
+
+- **Home** - Main landing page
+- **Render** - AI-powered JSON dashboard generator
+- **Chatbot** - AI chat interface
+
+### AI Chat
+
+Integrated with Zhipu GLM-4.7 large language model with streaming support:
+
+- API endpoint: `/api/chat`
+- Streaming responses via Vercel AI SDK
+- Requires `GLM_API_KEY` environment variable
+
+## Getting Started
+
+### Prerequisites
+
+1. Install dependencies:
 
 ```bash
 bun install
 ```
 
-2. 配置环境变量：
+2. Configure environment variables:
 
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env` 文件，填入你的 API 密钥：
+Edit `.env` file and add your API key:
 
 ```
 GLM_API_KEY=your_api_key_here
 ```
 
-### 开发
+### Development
 
 ```bash
-# 启动开发服务器
+# Start development server
 bun start
 
-# 指定平台启动
+# Platform-specific start
 bun run android    # Android
 bun run ios        # iOS
 bun run web        # Web
 ```
 
-## 项目结构
+### Code Quality
+
+```bash
+# Run ESLint
+bun run lint
+
+# TypeScript type checking
+bun run typecheck
+```
+
+## Project Structure
 
 ```
 expo-json-render/
 ├── src/
-│   ├── app/                    # Expo Router 文件路由
-│   │   ├── _layout.tsx        # 根布局
-│   │   ├── (tabs)/            # 标签页导航组
-│   │   │   ├── _layout.tsx    # 标签页布局
-│   │   │   ├── index.tsx      # 首页
-│   │   │   ├── render/        # JSON 渲染功能
-│   │   │   └── chatbot/       # AI 聊天功能
-│   │   └── api/               # API 路由
-│   │       └── chat+api.ts    # 聊天流式接口
-│   └── utils/                 # 工具函数
-│       └── urlGenerator.ts    # API URL 生成
+│   ├── app/                    # Expo Router file-based routing
+│   │   ├── _layout.tsx        # Root layout
+│   │   ├── (tabs)/            # Tabs navigator group
+│   │   │   ├── _layout.tsx    # Tabs layout
+│   │   │   ├── index.tsx      # Home screen
+│   │   │   ├── render/        # AI Dashboard Generator
+│   │   │   │   ├── index.tsx              # Main interface
+│   │   │   │   ├── registry.tsx            # Component registry (15 components)
+│   │   │   │   ├── dashboardCatalog.ts     # Component schema catalog
+│   │   │   │   ├── useDashboardTreeStream.ts # JSONL stream parser
+│   │   │   │   └── initialData.ts          # Sample data
+│   │   │   └── chatbot/       # AI Chat feature
+│   │   └── api/               # API routes
+│   │       └── chat+api.ts    # Chat streaming endpoint
+│   └── utils/                 # Utility functions
+│       └── urlGenerator.ts    # API URL generation
 ├── assets/
-│   └── images/                # 应用图标、启动页
-├── .env                       # 环境变量（不提交）
-├── .env.example              # 环境变量模板
-└── [配置文件]
+│   └── images/                # App icons, splash screens
+├── .env                       # Environment variables (not committed)
+├── .env.example              # Environment variables template
+└── [config files]
 ```
 
-## 功能说明
+## How AI Dashboard Generator Works
 
-### 标签页导航
+1. User enters a natural language description (e.g., "Revenue dashboard with metrics and chart")
+2. AI streams JSONL (JSON Lines) patches
+3. Patches are incrementally parsed and applied to a UI tree
+4. Components are rendered via the `@json-render/react` library
 
-- **首页** - 应用主页面
-- **渲染** - JSON 渲染功能
-- **聊天机器人** - AI 对话界面
+**Quick Prompt Examples:**
 
-### AI 聊天
+- "Revenue dashboard with metrics and chart" - Revenue dashboard
+- "Recent transactions table with status badges" - Recent transactions table
+- "Customer and orders overview with filters" - Customer and orders overview
+- "Sales by region chart and key metrics" - Regional sales chart
 
-集成智谱 GLM-4.7 大模型，支持流式响应：
+**Data Binding:**
 
-- API 端点：`/api/chat`
-- 使用 Vercel AI SDK 实现流式传输
-- 需配置 `GLM_API_KEY` 环境变量
+- `valuePath`: "/analytics/revenue" - Read a single value
+- `dataPath`: "/analytics/salesByRegion" - Read an array for charts/tables
+- `bindPath`: "/form/region" - Two-way binding for form inputs
 
-### API URL 配置
+## Environment Variables
 
-`urlGenerator.ts` 工具自动处理 API URL 构建：
+| Variable                   | Description             | Required |
+| -------------------------- | ----------------------- | -------- |
+| `GLM_API_KEY`              | Zhipu AI API key        | Yes      |
+| `EXPO_PUBLIC_API_BASE_URL` | Production API base URL | No       |
 
-- **开发环境**：使用 `Constants.experienceUrl` 构建本地 API URL
-- **生产环境**：需配置 `EXPO_PUBLIC_API_BASE_URL` 环境变量
+## Component Registry System
 
-## 环境变量
+The app uses `@json-render/react`'s component registry system:
 
-| 变量                       | 说明                  | 必填 |
-| -------------------------- | --------------------- | ---- |
-| `GLM_API_KEY`              | 智谱 AI API 密钥      | 是   |
-| `EXPO_PUBLIC_API_BASE_URL` | 生产环境 API 基础 URL | 否   |
+1. **Registry** (`registry.tsx`): Maps component type names to React components
+2. **Catalog** (`dashboardCatalog.ts`): Defines Zod schemas for component props
+3. **Renderer**: Renders UI elements from a tree structure with data binding support
 
-## Expo 实验性功能
+**Data Providers:**
+
+- `DataProvider` - Supplies data via `useData()` hook
+- `VisibilityProvider` - Controls component visibility
+- `ActionProvider` - Handles button actions and confirmation dialogs
+- `ValidationProvider` - Validates component props
+
+## API URL Configuration
+
+The `urlGenerator.ts` utility handles API URL construction:
+
+- **Development**: Uses `Constants.experienceUrl` to construct local API URLs
+- **Production**: Requires `EXPO_PUBLIC_API_BASE_URL` environment variable
+
+## Expo Experimental Features
 
 - New Architecture
 - Typed Routes
 - React Compiler
 - Static Web Output
+
+## Path Aliases
+
+- `@/*` maps to the project root directory (configured in `tsconfig.json`)
+
+## License
+
+Private project.
