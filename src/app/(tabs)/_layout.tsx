@@ -7,6 +7,10 @@ export default function TabLayout() {
         <Icon sf="chart.bar.fill" drawable="custom_settings_drawable" />
         <Label>Dashboard</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="todolist">
+        <Icon sf="list.bullet" drawable="custom_settings_drawable" />
+        <Label>TodoList</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="chatbot">
         <Icon
           sf="bubble.left.and.bubble.right.fill"
