@@ -18,20 +18,13 @@ export default function App() {
   if (error) return <Text>{error.message}</Text>;
 
   return (
-    <SafeAreaView style={{ height: "100%" }}>
-      <View
-        style={{
-          height: "95%",
-          display: "flex",
-          flexDirection: "column",
-          paddingHorizontal: 8,
-        }}
-      >
-        <ScrollView style={{ flex: 1 }}>
+    <SafeAreaView className="h-full">
+      <View className="h-[95%] flex flex-col px-2">
+        <ScrollView className="flex-1">
           {messages.map((m) => (
-            <View key={m.id} style={{ marginVertical: 8 }}>
+            <View key={m.id} className="my-2">
               <View>
-                <Text style={{ fontWeight: 700 }}>{m.role}</Text>
+                <Text className="font-bold">{m.role}</Text>
                 {m.parts.map((part, i) => {
                   switch (part.type) {
                     case "text":
@@ -43,9 +36,9 @@ export default function App() {
           ))}
         </ScrollView>
 
-        <View style={{ marginTop: 8 }}>
+        <View className="mt-2">
           <TextInput
-            style={{ backgroundColor: "white", padding: 8 }}
+            className="bg-white p-2"
             placeholder="Say something..."
             value={input}
             onChange={(e) => setInput(e.nativeEvent.text)}

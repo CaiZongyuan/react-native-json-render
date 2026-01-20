@@ -6,10 +6,8 @@ import React, { useMemo, useState } from "react";
 import {
   ScrollView,
   Text,
-  TextInput,
   View,
   Pressable,
-  StyleSheet,
   type LayoutChangeEvent,
   Platform,
   Modal,
@@ -54,8 +52,8 @@ function normalizePath(path: string): string {
 
 export function UnknownComponent({ element }: ComponentRenderProps) {
   return (
-    <View style={[styles.card, { borderColor: color.border }]}>
-      <Text style={{ color: color.muted }}>Unknown component: {element.type}</Text>
+    <View className="bg-[#111827] border border-[#243041] rounded-xl p-3">
+      <Text className="text-[#9ca3af]">Unknown component: {element.type}</Text>
     </View>
   );
 }
@@ -68,12 +66,12 @@ export function Card({ element, children }: ComponentRenderProps) {
   };
 
   return (
-    <View style={[styles.card, { padding: spacing(padding) }]}>
-      {!!title && <Text style={styles.cardTitle}>{title}</Text>}
+    <View className={`bg-[#111827] border border-[#243041] rounded-xl`} style={{ padding: spacing(padding) }}>
+      {!!title && <Text className="text-[#e5e7eb] font-extrabold text-base">{title}</Text>}
       {!!description && (
-        <Text style={[styles.mutedText, { marginTop: 4 }]}>{description}</Text>
+        <Text className="text-[#9ca3af] text-xs mt-1">{description}</Text>
       )}
-      <View style={{ marginTop: title || description ? 12 : 0 }}>{children}</View>
+      <View className={title || description ? "mt-3" : ""}>{children}</View>
     </View>
   );
 }
@@ -109,7 +107,7 @@ export function Grid({ element, children }: ComponentRenderProps) {
       : undefined;
 
   return (
-    <View onLayout={onLayout} style={{ flexDirection: "row", flexWrap: "wrap" }}>
+    <View onLayout={onLayout} className="flex-row flex-wrap">
       {items.map((child, idx) => {
         const isEndOfRow = idx % cols === cols - 1;
         return (
@@ -184,7 +182,7 @@ export function Heading({ element }: ComponentRenderProps) {
           : 18;
 
   return (
-    <Text style={{ color: color.foreground, fontSize, fontWeight: 700 }}>
+    <Text className="text-[#e5e7eb]" style={{ fontSize, fontWeight: 700 }}>
       {text}
     </Text>
   );
@@ -241,8 +239,8 @@ export function Badge({ element }: ComponentRenderProps) {
             : color.border;
 
   return (
-    <View style={[styles.badge, { backgroundColor: background, borderColor: border }]}>
-      <Text style={{ color: color.foreground, fontSize: 12, fontWeight: 600 }}>
+    <View className="py-1 px-2.5 rounded-full border self-flex-start" style={{ backgroundColor: background, borderColor: border }}>
+      <Text className="text-[#e5e7eb] text-xs font-semibold">
         {text}
       </Text>
     </View>
@@ -266,9 +264,9 @@ export function Alert({ element }: ComponentRenderProps) {
           : color.info;
 
   return (
-    <View style={[styles.card, { borderColor: accent, backgroundColor: "#0f172a" }]}>
-      <Text style={{ color: color.foreground, fontWeight: 700 }}>{title}</Text>
-      {!!message && <Text style={[styles.mutedText, { marginTop: 6 }]}>{message}</Text>}
+    <View className="bg-[#111827] border rounded-xl p-3" style={{ borderColor: accent, backgroundColor: "#0f172a" }}>
+      <Text className="text-[#e5e7eb] font-bold">{title}</Text>
+      {!!message && <Text className="text-[#9ca3af] text-xs mt-1.5">{message}</Text>}
     </View>
   );
 }
@@ -276,9 +274,9 @@ export function Alert({ element }: ComponentRenderProps) {
 export function Divider({ element }: ComponentRenderProps) {
   const { label } = element.props as { label?: string | null };
   return (
-    <View style={{ marginVertical: 12 }}>
-      {!!label && <Text style={[styles.mutedText, { marginBottom: 8 }]}>{label}</Text>}
-      <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: color.border }} />
+    <View className="my-3">
+      {!!label && <Text className="text-[#9ca3af] text-xs mb-2">{label}</Text>}
+      <View className="h-px bg-[#243041]" />
     </View>
   );
 }
@@ -289,9 +287,9 @@ export function Empty({ element }: ComponentRenderProps) {
     description?: string | null;
   };
   return (
-    <View style={[styles.card, { alignItems: "center" }]}>
-      <Text style={{ color: color.foreground, fontWeight: 700 }}>{title}</Text>
-      {!!description && <Text style={[styles.mutedText, { marginTop: 6 }]}>{description}</Text>}
+    <View className="bg-[#111827] border border-[#243041] rounded-xl p-3 items-center">
+      <Text className="text-[#e5e7eb] font-bold">{title}</Text>
+      {!!description && <Text className="text-[#9ca3af] text-xs mt-1.5">{description}</Text>}
     </View>
   );
 }
@@ -338,21 +336,16 @@ export function Metric({ element }: ComponentRenderProps) {
 
   return (
     <View>
-      <Text style={styles.mutedText}>{label}</Text>
+      <Text className="text-[#9ca3af] text-xs">{label}</Text>
       <Text
         numberOfLines={1}
         ellipsizeMode="tail"
-        style={{
-          color: color.foreground,
-          fontSize: 26,
-          fontWeight: 800,
-          flexShrink: 1,
-        }}
+        className="text-[#e5e7eb] text-[26px] font-extrabold flex-shrink"
       >
         {displayValue}
       </Text>
       {(trend || trendValue) && (
-        <Text style={{ color: trendColor, fontSize: 13, fontWeight: 600, marginTop: 4 }}>
+        <Text className="text-[13px] font-semibold mt-1" style={{ color: trendColor }}>
           {trendValue ?? ""}
         </Text>
       )}
@@ -375,7 +368,7 @@ export function Chart({ element }: ComponentRenderProps) {
   const chartHeight = Math.max(80, Math.min(200, height ?? 120));
 
   if (!Array.isArray(chartData) || chartData.length === 0) {
-    return <Text style={styles.mutedText}>No data</Text>;
+    return <Text className="text-[#9ca3af] text-xs">No data</Text>;
   }
 
   const values = chartData.map((d) => (typeof d.value === "number" ? d.value : Number(d.value)));
@@ -384,17 +377,17 @@ export function Chart({ element }: ComponentRenderProps) {
   return (
     <View>
       {!!title && (
-        <Text style={{ color: color.foreground, fontWeight: 700, marginBottom: 10 }}>
+        <Text className="text-[#e5e7eb] font-bold mb-2.5">
           {title}
         </Text>
       )}
-      <View style={{ flexDirection: "row", alignItems: "flex-end", height: chartHeight }}>
+      <View className="flex-row items-end" style={{ height: chartHeight }}>
         {chartData.map((d, idx) => {
           const v = values[idx] ?? 0;
           const clamped = Number.isFinite(v) ? Math.max(0, v) : 0;
           const barHeight = Math.max(4, (clamped / maxValue) * chartHeight);
           return (
-          <View key={d.label} style={{ flex: 1, alignItems: "center", height: "100%" }}>
+          <View key={d.label} className="flex-1 items-center h-full">
             <View
               style={{
                 width: "70%",
@@ -405,7 +398,7 @@ export function Chart({ element }: ComponentRenderProps) {
             />
             <Text
               numberOfLines={1}
-              style={[styles.mutedText, { fontSize: 11, marginTop: 6, maxWidth: 60 }]}
+              className="text-[#9ca3af] text-[11px] mt-1.5 max-w-[60px]"
             >
               {d.label}
             </Text>
@@ -432,7 +425,7 @@ export function Table({ element }: ComponentRenderProps) {
 
   if (!Array.isArray(tableData) || tableData.length === 0) {
     return (
-      <Text style={styles.mutedText}>
+      <Text className="text-[#9ca3af] text-xs">
         No data ({normalizedDataPath})
       </Text>
     );
@@ -463,23 +456,23 @@ export function Table({ element }: ComponentRenderProps) {
   return (
     <View>
       {!!title && (
-        <Text style={{ color: color.foreground, fontWeight: 700, marginBottom: 10 }}>
+        <Text className="text-[#e5e7eb] font-bold mb-2.5">
           {title}
         </Text>
       )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
-        <View style={{ minWidth: 520, flexGrow: 1 }}>
-          <View style={styles.tableHeaderRow}>
+        <View className="min-w-[520px] flex-1">
+          <View className="flex-row py-2.5 border-b border-[#243041]">
             {columns.map((col) => (
-              <Text key={col.key} style={styles.tableHeaderCell}>
+              <Text key={col.key} className="w-[140px] text-[#9ca3af] text-xs font-bold uppercase">
                 {col.label}
               </Text>
             ))}
           </View>
           {tableData.map((row, idx) => (
-            <View key={idx} style={styles.tableRow}>
+            <View key={idx} className="flex-row py-2.5 border-b border-[#243041]">
               {columns.map((col) => (
-                <Text key={col.key} style={styles.tableCell}>
+                <Text key={col.key} className="w-[140px] text-[#e5e7eb] text-xs">
                   {formatCell(row[col.key], col.format)}
                 </Text>
               ))}
@@ -522,17 +515,14 @@ export function Button({ element, onAction, loading }: ComponentRenderProps) {
         if (disabled || loading) return;
         onAction?.(actionObj);
       }}
+      className="py-2.5 px-3.5 rounded-xl border"
       style={{
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 10,
         backgroundColor,
-        borderWidth: 1,
         borderColor,
         opacity,
       }}
     >
-      <Text style={{ color: textColor, fontWeight: 700, fontSize: 14 }}>
+      <Text className="text-[14px] font-bold" style={{ color: textColor }}>
         {loading ? "Loading..." : label}
       </Text>
     </Pressable>
@@ -551,29 +541,23 @@ export function Select({ element }: ComponentRenderProps) {
 
   return (
     <View>
-      {!!label && <Text style={styles.mutedText}>{label}</Text>}
+      {!!label && <Text className="text-[#9ca3af] text-xs">{label}</Text>}
       {!value && !!placeholder && (
-        <Text style={[styles.mutedText, { fontSize: 12 }]}>{placeholder}</Text>
+        <Text className="text-[#9ca3af] text-xs">{placeholder}</Text>
       )}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>
+      <View className="flex-row flex-wrap mt-2">
         {options.map((opt, idx) => {
           const active = value === opt.value;
           return (
             <Pressable
               key={opt.value}
               onPress={() => setValue(opt.value)}
+              className={`mr-2 mb-2 py-2 px-2.5 rounded-xl border ${active ? "bg-[#13294b] border-[#60a5fa]" : "border-[#243041]"}`}
               style={{
                 marginRight: idx % 3 === 2 ? 0 : 8,
-                marginBottom: 8,
-                paddingVertical: 8,
-                paddingHorizontal: 10,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: active ? color.info : color.border,
-                backgroundColor: active ? "#13294b" : "transparent",
               }}
             >
-              <Text style={{ color: color.foreground, fontWeight: 600 }}>
+              <Text className="text-[#e5e7eb] font-semibold">
                 {opt.label}
               </Text>
             </Pressable>
@@ -620,10 +604,10 @@ export function DatePicker({ element }: ComponentRenderProps) {
 
   return (
     <View>
-      {!!label && <Text style={styles.mutedText}>{label}</Text>}
+      {!!label && <Text className="text-[#9ca3af] text-xs">{label}</Text>}
       <Pressable
         onPress={() => setShowPicker(true)}
-        style={[styles.input, { marginTop: 8 }]}
+        className="bg-[#0f172a] border border-[#243041] rounded-xl py-2.5 px-3 mt-2"
       >
         <Text style={{ color: value ? color.foreground : color.muted }}>
           {displayValue}
@@ -639,11 +623,11 @@ export function DatePicker({ element }: ComponentRenderProps) {
           onRequestClose={() => setShowPicker(false)}
         >
           <TouchableOpacity
-            style={styles.modalOverlay}
+            className="flex-1 bg-black/50 justify-end"
             activeOpacity={1}
             onPress={() => setShowPicker(false)}
           >
-            <View style={styles.modalContent}>
+            <View className="bg-[#111827] rounded-t-2xl pb-10 pt-5 px-5 items-center">
               <DateTimePicker
                 value={parsedDate}
                 mode="date"
@@ -652,10 +636,10 @@ export function DatePicker({ element }: ComponentRenderProps) {
                 style={{ width: 320 }}
               />
               <TouchableOpacity
-                style={styles.modalButton}
+                className="bg-[#e5e7eb] py-3 px-8 rounded-xl mt-4"
                 onPress={() => setShowPicker(false)}
               >
-                <Text style={styles.modalButtonText}>Done</Text>
+                <Text className="text-[#0b0f19] font-bold text-base">Done</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -692,88 +676,3 @@ export const dashboardRegistry: ComponentRegistry = {
   Divider,
   Empty,
 };
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: color.card,
-    borderWidth: 1,
-    borderColor: color.border,
-    borderRadius: 14,
-    padding: 12,
-  },
-  cardTitle: {
-    color: color.foreground,
-    fontWeight: 800,
-    fontSize: 16,
-  },
-  mutedText: {
-    color: color.muted,
-    fontSize: 13,
-  },
-  badge: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    alignSelf: "flex-start",
-  },
-  tableHeaderRow: {
-    flexDirection: "row",
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: color.border,
-  },
-  tableHeaderCell: {
-    width: 140,
-    color: color.muted,
-    fontSize: 12,
-    fontWeight: 700,
-    textTransform: "uppercase",
-  },
-  tableRow: {
-    flexDirection: "row",
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: color.border,
-  },
-  tableCell: {
-    width: 140,
-    color: color.foreground,
-    fontSize: 13,
-  },
-  input: {
-    backgroundColor: "#0f172a",
-    borderColor: color.border,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    color: color.foreground,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: color.card,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 40,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    alignItems: "center",
-  },
-  modalButton: {
-    backgroundColor: color.foreground,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  modalButtonText: {
-    color: color.background,
-    fontWeight: 700,
-    fontSize: 16,
-  },
-});
