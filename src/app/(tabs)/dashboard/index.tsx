@@ -26,7 +26,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -256,33 +255,24 @@ export default function Dashboard() {
   return (
     <>
       <RNConfirmDialogManager />
-      <View style={{ flex: 1, padding: 16 }}>
+      <View className="flex-1 p-4">
         <View>
-          <Text style={{ color: "#e5e7eb", fontSize: 24, fontWeight: 800 }}>
+          <Text className="text-gray-200 text-2xl font-extrabold">
             Render
           </Text>
-          <Text style={{ color: "#9ca3af", marginTop: 6 }}>
+          <Text className="text-gray-400 mt-1.5">
             {headerSubtitle}
           </Text>
         </View>
 
-        <View style={{ flexDirection: "row", marginTop: 12 }}>
+        <View className="flex-row mt-3">
           <TextInput
             value={prompt}
             onChangeText={setPrompt}
             placeholder="Describe a revenue dashboard..."
             placeholderTextColor="#9ca3af"
             editable={!isStreaming}
-            style={{
-              flex: 1,
-              backgroundColor: "#0f172a",
-              borderColor: "#243041",
-              borderWidth: 1,
-              borderRadius: 12,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              color: "#e5e7eb",
-            }}
+            className="flex-1 bg-[#0f172a] border border-[#243041] rounded-xl py-2.5 px-3 text-gray-200"
             onSubmitEditing={(e) => {
               e.preventDefault();
               start();
@@ -291,71 +281,38 @@ export default function Dashboard() {
           <Pressable
             onPress={start}
             disabled={isStreaming || !prompt.trim()}
-            style={{
-              marginLeft: 10,
-              paddingVertical: 10,
-              paddingHorizontal: 14,
-              borderRadius: 12,
-              backgroundColor: "#e5e7eb",
-              opacity: isStreaming || !prompt.trim() ? 0.6 : 1,
-              justifyContent: "center",
-            }}
+            className={`ml-2.5 py-2.5 px-3.5 rounded-xl bg-gray-200 justify-center ${isStreaming || !prompt.trim() ? "opacity-60" : "opacity-100"}`}
           >
-            <Text style={{ color: "#0b0f19", fontWeight: 800 }}>
+            <Text className="text-[#0b0f19] font-extrabold">
               {isStreaming ? "..." : "Generate"}
             </Text>
           </Pressable>
           <Pressable
             onPress={clear}
-            style={{
-              marginLeft: 10,
-              paddingVertical: 10,
-              paddingHorizontal: 14,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#243041",
-              justifyContent: "center",
-            }}
+            className="ml-2.5 py-2.5 px-3.5 rounded-xl border border-[#243041] justify-center"
           >
-            <Text style={{ color: "#e5e7eb", fontWeight: 800 }}>Clear</Text>
+            <Text className="text-gray-200 font-extrabold">Clear</Text>
           </Pressable>
         </View>
 
-        <View
-          style={{
-            flexDirection: "row",
-            marginTop: 10,
-            alignItems: "center",
-          }}
-        >
+        <View className="flex-row mt-2.5 items-center">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={{ flex: 1 }}
+            className="flex-1"
           >
             {QUICK_PROMPTS.map((p) => (
               <Pressable
                 key={p}
                 disabled={isStreaming}
                 onPress={() => setPrompt(p)}
+                className="mr-2 py-2 px-2.5 rounded-full border border-[#243041]"
                 style={({ pressed }) => ({
-                  marginRight: 8,
-                  paddingVertical: 8,
-                  paddingHorizontal: 10,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: "#243041",
                   backgroundColor: pressed ? "#0f172a" : "transparent",
                   opacity: isStreaming ? 0.5 : 1,
                 })}
               >
-                <Text
-                  style={{
-                    color: "#e5e7eb",
-                    fontWeight: 700,
-                    fontSize: 12,
-                  }}
-                >
+                <Text className="text-gray-200 font-bold text-xs">
                   {p}
                 </Text>
               </Pressable>
@@ -364,96 +321,53 @@ export default function Dashboard() {
 
           <Pressable
             onPress={() => loadMock("dashboard")}
-            style={{
-              marginLeft: 10,
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#243041",
-            }}
+            className="ml-2.5 py-2 px-3 rounded-xl border border-[#243041]"
           >
-            <Text
-              style={{
-                color: "#e5e7eb",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-            >
+            <Text className="text-gray-200 font-extrabold text-xs">
               Mock
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => setIsOutputSheetOpen(true)}
-            style={{
-              marginLeft: 10,
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#243041",
-            }}
+            className="ml-2.5 py-2 px-3 rounded-xl border border-[#243041]"
           >
-            <Text
-              style={{
-                color: "#e5e7eb",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-            >
+            <Text className="text-gray-200 font-extrabold text-xs">
               AI JSON
             </Text>
           </Pressable>
         </View>
 
         {showDoneBanner && (
-          <View style={styles.doneBanner}>
-            <Text style={styles.doneBannerText}>{doneBannerText}</Text>
+          <View className="mt-2.5 py-2.5 px-3 rounded-xl border border-[#14532d] bg-[#052e16] flex-row justify-between items-center">
+            <Text className="text-[#bbf7d0] font-extrabold">{doneBannerText}</Text>
             <Pressable onPress={() => setIsOutputSheetOpen(true)}>
-              <Text style={styles.doneBannerLink}>View output</Text>
+              <Text className="text-[#93c5fd] font-extrabold">View output</Text>
             </Pressable>
           </View>
         )}
 
         <ScrollView
-          style={{ flex: 1, marginTop: 12 }}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          className="flex-1 mt-3"
+          contentContainerClassName="pb-6"
         >
           {!!tree && !tree.root && (
-            <View
-              style={{
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: "#7f1d1d",
-                padding: 12,
-                backgroundColor: "#3a1414",
-                marginBottom: 12,
-              }}
-            >
-              <Text style={{ color: "#fecaca", fontWeight: 800 }}>
+            <View className="rounded-xl border border-[#7f1d1d] p-3 bg-[#3a1414] mb-3">
+              <Text className="text-[#fecaca] font-extrabold">
                 Tree has no root yet
               </Text>
-              <Text style={{ color: "#fecaca", marginTop: 6 }}>
+              <Text className="text-[#fecaca] mt-1.5">
                 Open AI JSON to inspect patch output.
               </Text>
             </View>
           )}
 
           {!hasElements ? (
-            <View
-              style={{
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: "#243041",
-                padding: 16,
-                backgroundColor: "#111827",
-              }}
-            >
-              <Text style={{ color: "#9ca3af" }}>
+            <View className="rounded-xl border border-[#243041] p-4 bg-[#111827]">
+              <Text className="text-gray-400">
                 Try: &quot;Revenue dashboard with metrics and chart&quot;
               </Text>
-              <Text style={{ color: "#9ca3af", marginTop: 6 }}>
+              <Text className="text-gray-400 mt-1.5">
                 Or: &quot;Recent transactions table&quot;
               </Text>
             </View>
@@ -475,68 +389,52 @@ export default function Dashboard() {
         onRequestClose={() => setIsOutputSheetOpen(false)}
       >
         <Pressable
-          style={styles.sheetBackdrop}
+          className="flex-1 bg-black/55"
           onPress={() => setIsOutputSheetOpen(false)}
         />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>AI Output</Text>
+        <View className="absolute left-0 right-0 bottom-0 max-h-[78%] bg-[#0b0f19] rounded-t-2xl border-x border-t border-[#243041] p-3.5">
+          <View className="flex-row justify-between items-center">
+            <Text className="text-gray-200 font-black text-base">AI Output</Text>
             <Pressable onPress={() => setIsOutputSheetOpen(false)}>
-              <Text style={styles.sheetClose}>Close</Text>
+              <Text className="text-gray-400 font-extrabold">Close</Text>
             </Pressable>
           </View>
 
-          <View style={{ flexDirection: "row", marginTop: 10 }}>
+          <View className="flex-row mt-2.5">
             <Pressable
               onPress={() => loadMock("dashboard")}
-              style={[styles.sheetTab, { marginRight: 8 }]}
+              className="py-2 px-2.5 rounded-full border border-[#243041] mr-2"
             >
-              <Text style={styles.sheetTabText}>Load mock dashboard</Text>
+              <Text className="text-gray-200 font-extrabold text-xs">Load mock dashboard</Text>
             </Pressable>
             <Pressable
               onPress={() => loadMock("table")}
-              style={styles.sheetTab}
+              className="py-2 px-2.5 rounded-full border border-[#243041]"
             >
-              <Text style={styles.sheetTabText}>Load mock table</Text>
+              <Text className="text-gray-200 font-extrabold text-xs">Load mock table</Text>
             </Pressable>
           </View>
 
-          <View style={styles.sheetTabs}>
+          <View className="flex-row mt-2.5">
             <Pressable
               onPress={() => setOutputTab("patches")}
-              style={[
-                styles.sheetTab,
-                outputTab === "patches" && styles.sheetTabActive,
-              ]}
+              className={`py-2 px-2.5 rounded-full border border-[#243041] mr-2 ${outputTab === "patches" ? "bg-[#111827] border-[#60a5fa]" : ""}`}
             >
-              <Text
-                style={[
-                  styles.sheetTabText,
-                  outputTab === "patches" && styles.sheetTabTextActive,
-                ]}
-              >
+              <Text className={`text-gray-200 font-extrabold text-xs ${outputTab === "patches" ? "text-[#93c5fd]" : ""}`}>
                 Patches
               </Text>
             </Pressable>
             <Pressable
               onPress={() => setOutputTab("tree")}
-              style={[
-                styles.sheetTab,
-                outputTab === "tree" && styles.sheetTabActive,
-              ]}
+              className={`py-2 px-2.5 rounded-full border border-[#243041] ${outputTab === "tree" ? "bg-[#111827] border-[#60a5fa]" : ""}`}
             >
-              <Text
-                style={[
-                  styles.sheetTabText,
-                  outputTab === "tree" && styles.sheetTabTextActive,
-                ]}
-              >
+              <Text className={`text-gray-200 font-extrabold text-xs ${outputTab === "tree" ? "text-[#93c5fd]" : ""}`}>
                 Tree
               </Text>
             </Pressable>
           </View>
 
-          <Text style={styles.sheetMeta}>
+          <Text className="mt-2.5 text-gray-400 text-xs">
             Status: {status}
             {parseError ? ` · parseError: ${parseError}` : ""}
             {treeStats ? ` · elements: ${treeStats.total}` : ""}
@@ -548,7 +446,7 @@ export default function Dashboard() {
           </Text>
 
           {treeStats && treeStats.missingChildRefs.length > 0 && (
-            <Text style={[styles.sheetMeta, { marginTop: 6 }]}>
+            <Text className="mt-1.5 text-gray-400 text-xs">
               Missing refs (sample):{" "}
               {treeStats.missingChildRefs
                 .slice(0, 3)
@@ -559,10 +457,10 @@ export default function Dashboard() {
           )}
 
           <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: 24 }}
+            className="flex-1"
+            contentContainerClassName="pb-6"
           >
-            <Text selectable style={styles.sheetBodyText}>
+            <Text selectable className="mt-2.5 text-gray-200 font-mono text-xs leading-4">
               {outputTab === "patches"
                 ? assistantOutput || "(No output yet)"
                 : tree
@@ -575,95 +473,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  doneBanner: {
-    marginTop: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#14532d",
-    backgroundColor: "#052e16",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  doneBannerText: {
-    color: "#bbf7d0",
-    fontWeight: 800,
-  },
-  doneBannerLink: {
-    color: "#93c5fd",
-    fontWeight: 800,
-  },
-  sheetBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-  },
-  sheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    maxHeight: "78%",
-    backgroundColor: "#0b0f19",
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: "#243041",
-    padding: 14,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sheetTitle: {
-    color: "#e5e7eb",
-    fontWeight: 900,
-    fontSize: 16,
-  },
-  sheetClose: {
-    color: "#9ca3af",
-    fontWeight: 800,
-  },
-  sheetTabs: {
-    flexDirection: "row",
-    marginTop: 10,
-  },
-  sheetTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#243041",
-    marginRight: 8,
-  },
-  sheetTabActive: {
-    backgroundColor: "#111827",
-    borderColor: "#60a5fa",
-  },
-  sheetTabText: {
-    color: "#e5e7eb",
-    fontWeight: 800,
-    fontSize: 12,
-  },
-  sheetTabTextActive: {
-    color: "#93c5fd",
-  },
-  sheetMeta: {
-    marginTop: 10,
-    color: "#9ca3af",
-    fontSize: 12,
-  },
-  sheetBodyText: {
-    marginTop: 10,
-    color: "#e5e7eb",
-    fontFamily: "monospace",
-    fontSize: 12,
-    lineHeight: 16,
-  },
-});
