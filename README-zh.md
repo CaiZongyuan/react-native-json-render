@@ -1,6 +1,6 @@
 # Expo JSON Render
 
-基于 Expo Router 的 React Native 应用，支持 AI 驱动的 JSON 仪表板生成和 AI 聊天功能。
+基于 Expo Router 的 React Native 应用，支持 AI 驱动的 JSON 仪表板生成、交互式待办事项和 AI 聊天功能。
 
 ## 技术栈
 
@@ -8,9 +8,10 @@
 - **React** 19.1.0
 - **Expo Router** v6 (文件路由 + Native Tabs 导航)
 - **@json-render/core** & **@json-render/react** - JSON 驱动的 UI 渲染
-- **Vercel AI SDK** - AI 聊天集成
+- **Vercel AI SDK** - AI 聊天集成，支持工具调用
 - **GLM-4.7** - 智谱 AI 大模型（可替换为其他模型）
-- **Zod** - 组件 schema 验证
+- **Zod** v4 - 组件 schema 验证
+- **Tailwind CSS** v4 + **uniwind** - React Native 通用样式
 - **TypeScript** (严格模式)
 - **Bun** - 包管理器
 
@@ -57,18 +58,82 @@
 | Divider    | 分割线             | label                            |
 | Empty      | 空状态展示         | title, description               |
 
+### AI 待办事项生成器
+
+独立的 JSON 驱动待办/任务管理界面组件展示。与仪表板生成器类似，它使用 AI 从自然语言描述生成交互式 UI 组件。
+
+**核心特性：**
+
+- 8 种内置组件（Title、Text、Table、Checkbox、Button、Confirm、Waiting、Input、Stack）
+- JSONL (JSON Lines) 增量渲染，实时显示组件
+- 交互式待办列表，支持显示/隐藏已完成切换
+- 演示模式，包含预构建的组件展示
+- 支持模拟数据加载测试
+
+**可用组件：**
+
+| 组件       | 描述                    | 主要属性                                                 |
+| ---------- | ----------------------- | -------------------------------------------------------- |
+| Title      | 标题文本                | text                                                     |
+| Text       | 带变体的段落文本        | content, variant (默认/静音/成功/警告/危险)             |
+| Table      | 交互式待办列表          | dataPath, showCompletedPath                             |
+| Checkbox   | 复选框输入              | label, bindPath                                         |
+| Button     | 操作按钮                | label, variant (主要/次要/危险), action                  |
+| Confirm    | 带确认对话框的按钮      | label, action, confirm (标题, 消息)                     |
+| Waiting    | 带文本的加载动画        | text                                                     |
+| Input      | 文本输入框              | label, bindPath, placeholder                            |
+| Stack      | 弹性布局容器            | gap (小/中/大), direction, align                        |
+
+**快速提示：**
+
+- "带复选框的简单待办清单"
+- "带分类的任务管理器"
+- "带时间段的时间规划器"
+- "带分区的购物清单"
+
 ### 标签页导航
 
-- **首页** - 应用主页面
-- **渲染** - AI 驱动的 JSON 仪表板生成器
-- **聊天机器人** - AI 对话界面
+- **仪表板** - AI 驱动的 JSON 仪表板生成器（15 个组件）
+- **待办事项** - 独立的待办事项组件展示，支持 AI 生成
+- **聊天机器人** - AI 对话界面，带交互式待办事项工具调用
 
-### AI 聊天
+### AI 聊天机器人与待办事项工具
 
-集成智谱 GLM-4.7 大模型，支持流式响应：
+由 GLM-4.7 驱动的交互式聊天界面，支持 AI 工具调用：
 
-- API 端点：`/api/chat`
-- 使用 Vercel AI SDK 实现流式传输
+**核心特性：**
+
+- 通过 Vercel AI SDK 实现流式聊天响应
+- 交互式待办事项 UI 卡片组件
+- AI 自动检测待办相关请求
+- 多选建议快速添加任务
+- 自定义待办输入与操作按钮
+- 显示/隐藏已完成任务切换
+
+**待办事项 UI 组件：**
+
+| 组件       | 描述               | 属性                          |
+| ---------- | ------------------ | ----------------------------- |
+| Title      | 标题文本           | text                          |
+| Text       | 带变体的段落文本   | content, variant              |
+| Table      | 交互式待办列表     | dataPath, showCompletedPath   |
+| Checkbox   | 复选框输入         | label, bindPath               |
+| Button     | 操作按钮           | label, variant, action        |
+| Input      | 文本输入框         | label, bindPath, placeholder  |
+| Stack      | 弹性布局容器       | gap, direction, align         |
+
+**快速提示：**
+
+- "什么是 React Native？"
+- "解释 Expo Router"
+- "如何在 React Native 中使用 Tailwind？"
+- "什么是 JSON 渲染？"
+- "显示我的待办清单并建议任务"
+
+**工具集成：**
+
+- API 端点：`/api/chatbot`
+- 自定义 `todo_ui` 工具渲染交互式 UI 卡片
 - 需配置 `GLM_API_KEY` 环境变量
 
 ### 模型替换
@@ -141,24 +206,40 @@ expo-json-render/
 │   │   ├── _layout.tsx        # 根布局
 │   │   ├── (tabs)/            # 标签页导航组
 │   │   │   ├── _layout.tsx    # 标签页布局
-│   │   │   ├── index.tsx      # 首页
 │   │   │   ├── dashboard/     # AI 仪表板生成器（仅页面）
 │   │   │   │   ├── _layout.tsx # 仪表板布局
 │   │   │   │   └── index.tsx   # 主界面
-│   │   │   └── chatbot/       # AI 聊天功能
+│   │   │   ├── todolist/      # 待办事项组件展示
+│   │   │   │   └── index.tsx   # 待办事项界面
+│   │   │   └── chatbot/       # AI 聊天机器人与待办事项
+│   │   │       ├── _layout.tsx # 聊天机器人布局
+│   │   │       └── index.tsx   # 聊天界面
 │   │   └── api/               # API 路由
-│   │       └── chat+api.ts    # 聊天流式接口
+│   │       ├── chat+api.ts    # 仪表板/待办事项聊天流式接口
+│   │       └── chatbot+api.ts # 聊天机器人工具调用接口
 │   ├── components/            # 可复用组件
-│   │   └── dashboard/         # 仪表板组件
-│   │       ├── registry.tsx   # 组件注册表（15 个组件）
-│   │       └── dashboardCatalog.ts # 组件 schema 目录
+│   │   ├── chatbot/           # 聊天机器人组件
+│   │   │   └── TodoAssistantCard.tsx # 交互式 UI 卡片
+│   │   ├── dashboard/         # 仪表板组件
+│   │   │   ├── registry.tsx   # 组件注册表（15 个组件）
+│   │   │   └── dashboardCatalog.ts # 组件 schema 目录
+│   │   └── todolist/          # 待办事项组件
+│   │       └── registry.tsx   # 待办事项组件注册表（8 个组件）
 │   ├── hooks/                 # 自定义 React hooks
-│   │   └── useDashboardTreeStream.ts # JSONL 流解析器
+│   │   ├── useDashboardTreeStream.ts # JSONL 流解析器
+│   │   └── useTodolistTreeStream.ts  # 待办事项 JSONL 解析器
 │   ├── lib/                   # 库代码
-│   │   └── dashboard/         # 仪表板库
-│   │       ├── systemPrompt.ts # AI 系统提示词生成器
-│   │       ├── initialData.ts  # 示例数据
-│   │       └── mockPatches.ts  # 模拟 JSONL 补丁
+│   │   ├── chatbot/           # 聊天机器人库
+│   │   │   └── systemPrompt.ts # 聊天机器人系统提示词
+│   │   ├── dashboard/         # 仪表板库
+│   │   │   ├── systemPrompt.ts # AI 系统提示词生成器
+│   │   │   ├── initialData.ts  # 示例数据
+│   │   │   └── mockPatches.ts  # 模拟 JSONL 补丁
+│   │   └── todolist/          # 待办事项库
+│   │       ├── systemPrompt.ts     # 待办事项系统提示词
+│   │       ├── initialData.ts      # 示例数据
+│   │       ├── mockPatches.ts      # 模拟 JSONL 补丁
+│   │       └── todoAssistantTool.ts # 待办 UI 工具与树构建器
 │   └── utils/                 # 工具函数
 │       └── urlGenerator.ts    # API URL 生成
 ├── assets/

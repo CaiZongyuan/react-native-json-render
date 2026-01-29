@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(bun run typecheck)"
+      "Bash(bun run typecheck)",
+      "Skill(expo-app-design:building-ui)",
+      "Bash(bun pm ls:*)"
     ]
   }
 }

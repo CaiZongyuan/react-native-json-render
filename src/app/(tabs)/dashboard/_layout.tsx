@@ -7,17 +7,14 @@ import {
   useData,
 } from "@json-render/react";
 import { Slot } from "expo-router";
+import { useMemo, useRef } from "react";
 import { Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useRef } from "react";
 
 type DashboardData = typeof INITIAL_DATA;
 
 // Generate random analytics data based on selected region and date
-function generateRandomData(
-  region: string,
-  dateRange: string,
-): DashboardData {
+function generateRandomData(region: string, dateRange: string): DashboardData {
   const regionMultiplier =
     region === "us"
       ? 1.5
@@ -61,7 +58,8 @@ function generateRandomData(
     date.setDate(date.getDate() - i);
     return {
       id: `TXN${String(1000 + i).padStart(4, "0")}`,
-      customer: customers_list[Math.floor(Math.random() * customers_list.length)],
+      customer:
+        customers_list[Math.floor(Math.random() * customers_list.length)],
       amount: Math.floor(500 + Math.random() * 5000),
       status: statuses[Math.floor(Math.random() * statuses.length)],
       date: date.toISOString().split("T")[0],
@@ -97,27 +95,30 @@ function InnerLayout() {
   regionRef.current = typedData.form?.region || "";
   dateRangeRef.current = typedData.form?.dateRange || "";
 
-  const ACTION_HANDLERS = useMemo(() => ({
-    refresh_data: () => {
-      const region = regionRef.current || "";
-      const dateRange = dateRangeRef.current || "";
-      const newData = generateRandomData(region, dateRange);
-      update(newData);
-      Alert.alert("Refreshed", "Data has been refreshed with new values.");
-    },
-    apply_filter: () => {
-      const region = regionRef.current || "all";
-      const dateRange = dateRangeRef.current || "";
-      const newData = generateRandomData(region, dateRange);
-      update(newData);
-      Alert.alert(
-        "Applied",
-        `Filters applied: ${region === "all" ? "All Regions" : region}${dateRange ? `, ${dateRange}` : ""}`,
-      );
-    },
-    view_details: (params: Record<string, unknown>) =>
-      Alert.alert("Details", JSON.stringify(params, null, 2)),
-  }), []);
+  const ACTION_HANDLERS = useMemo(
+    () => ({
+      refresh_data: () => {
+        const region = regionRef.current || "";
+        const dateRange = dateRangeRef.current || "";
+        const newData = generateRandomData(region, dateRange);
+        update(newData);
+        Alert.alert("Refreshed", "Data has been refreshed with new values.");
+      },
+      apply_filter: () => {
+        const region = regionRef.current || "all";
+        const dateRange = dateRangeRef.current || "";
+        const newData = generateRandomData(region, dateRange);
+        update(newData);
+        Alert.alert(
+          "Applied",
+          `Filters applied: ${region === "all" ? "All Regions" : region}${dateRange ? `, ${dateRange}` : ""}`,
+        );
+      },
+      view_details: (params: Record<string, unknown>) =>
+        Alert.alert("Details", JSON.stringify(params, null, 2)),
+    }),
+    [],
+  );
 
   return (
     <VisibilityProvider>
