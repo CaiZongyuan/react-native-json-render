@@ -67,7 +67,10 @@ export const dashboardCatalog = createCatalog({
       props: z.object({
         label: z.string(),
         variant: z.enum(["primary", "secondary", "danger", "ghost"]).nullable(),
-        action: z.union([z.string(), z.object({ name: z.string() })]),
+        action: z.union([
+          z.string(),
+          z.object({ name: z.string(), params: z.record(z.string(), z.any()).optional() }),
+        ]),
         disabled: z.boolean().nullable(),
       }),
       description: "Button that triggers an action",
@@ -146,4 +149,3 @@ export const dashboardCatalog = createCatalog({
 });
 
 export const componentList = dashboardCatalog.componentNames as string[];
-

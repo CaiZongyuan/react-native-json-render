@@ -3,7 +3,12 @@ const { withUniwindConfig } = require("uniwind/metro");
 
 const config = getDefaultConfig(__dirname);
 
-// your metro modifications
+// Ignore agent/skill folders (may contain symlinks or non-RN files that break Metro on Windows)
+config.resolver.blockList = [
+  /[\/\\]\.codex[\/\\].*/,
+  /[\/\\]\.agents[\/\\].*/,
+  /[\/\\]\.claude[\/\\].*/,
+];
 
 module.exports = withUniwindConfig(config, {
   // relative path to your global.css file (from previous step)

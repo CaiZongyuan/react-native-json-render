@@ -1,6 +1,8 @@
 import { generateAPIUrl } from "@/src/utils/urlGenerator";
 import { TodoAssistantCard } from "@/src/components/chatbot/TodoAssistantCard";
 import { TODO_UI_TOOL_NAME } from "@/src/lib/todolist/todoAssistantTool";
+import { JsonRenderCard } from "@/src/components/chatbot/JsonRenderCard";
+import { RENDER_UI_TOOL_NAME } from "@/src/lib/chatbot/renderUiTool";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
@@ -15,6 +17,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import type { UserEvent } from "@/src/lib/chatbot/userEvent";
 
 const QUICK_PROMPTS = [
   "What is React Native?",
@@ -53,6 +56,15 @@ export default function Chatbot() {
     setInput("");
   }, [input, sendMessage, status]);
 
+  const sendUserEvent = useCallback(
+    (event: UserEvent) => {
+      sendMessage({
+        parts: [{ type: "data-user_event", data: event }],
+      } as unknown as Parameters<typeof sendMessage>[0]);
+    },
+    [sendMessage],
+  );
+
   const isStreaming = status === "submitted" || status === "streaming";
 
   const renderMessage = useCallback(
@@ -63,6 +75,11 @@ export default function Chatbot() {
       if (isSystem) return null;
 
       const text = getMessageText(item);
+      const userEventParts = item.parts.filter(
+        (p) => p.type === "data-user_event",
+      ) as unknown as { data?: unknown }[];
+      const userEvent = (userEventParts[0]?.data ?? null) as null | UserEvent;
+
       const todoToolParts = item.parts.filter(
         (p) => p.type === `tool-${TODO_UI_TOOL_NAME}`,
       ) as unknown as {
@@ -73,8 +90,25 @@ export default function Chatbot() {
         errorText?: string;
       }[];
 
+      const uiToolParts = item.parts.filter(
+        (p) => p.type === `tool-${RENDER_UI_TOOL_NAME}`,
+      ) as unknown as {
+        toolCallId: string;
+        state: string;
+        input?: unknown;
+        output?: unknown;
+        errorText?: string;
+      }[];
+
       return (
         <View className="my-1.5">
+          {isUser && !text && userEvent && (
+            <View className="px-3 py-2 rounded-2xl max-w-[85%] bg-gray-200 self-end">
+              <Text className="text-xs font-bold text-[#0b0f19]">
+                Action: {userEvent.name}
+              </Text>
+            </View>
+          )}
           {!!text && (
             <View
               className={`px-3 py-2.5 rounded-2xl max-w-[85%] ${
@@ -99,10 +133,12 @@ export default function Chatbot() {
                 return (
                   <View key={part.toolCallId} className="self-start max-w-[92%]">
                     <TodoAssistantCard
+                      blockId={part.toolCallId}
                       state={part.state}
                       input={part.input}
                       output={part.output}
                       loading={isStreaming}
+                      onUserEvent={sendUserEvent}
                     />
                   </View>
                 );
@@ -127,9 +163,57 @@ export default function Chatbot() {
               return (
                 <View key={part.toolCallId} className="self-start max-w-[92%]">
                   <TodoAssistantCard
+                    blockId={part.toolCallId}
                     state={part.state}
                     input={part.input}
                     loading
+                    onUserEvent={sendUserEvent}
+                  />
+                </View>
+              );
+            })}
+
+          {!isUser &&
+            uiToolParts.map((part) => {
+              if (part.state === "output-available") {
+                return (
+                  <View key={part.toolCallId} className="self-start max-w-[92%]">
+                    <JsonRenderCard
+                      blockId={part.toolCallId}
+                      state={part.state}
+                      input={part.input}
+                      output={part.output}
+                      loading={isStreaming}
+                      onUserEvent={sendUserEvent}
+                    />
+                  </View>
+                );
+              }
+
+              if (part.state === "output-error") {
+                return (
+                  <View
+                    key={part.toolCallId}
+                    className="self-start mt-2 rounded-2xl border border-[#243041] bg-[#111827] p-3 max-w-[92%]"
+                  >
+                    <Text className="text-red-400 text-xs font-bold">
+                      UI tool error
+                    </Text>
+                    <Text className="text-gray-400 text-xs mt-1">
+                      {part.errorText ?? "Unknown error"}
+                    </Text>
+                  </View>
+                );
+              }
+
+              return (
+                <View key={part.toolCallId} className="self-start max-w-[92%]">
+                  <JsonRenderCard
+                    blockId={part.toolCallId}
+                    state={part.state}
+                    input={part.input}
+                    loading
+                    onUserEvent={sendUserEvent}
                   />
                 </View>
               );
@@ -137,7 +221,7 @@ export default function Chatbot() {
         </View>
       );
     },
-    [isStreaming],
+    [isStreaming, sendUserEvent],
   );
 
   const nonSystemCount = messages.filter((m) => m.role !== "system").length;
