@@ -3,7 +3,9 @@
     "allow": [
       "Bash(bun run typecheck)",
       "Skill(expo-app-design:building-ui)",
-      "Bash(bun pm ls:*)"
+      "Bash(bun pm ls:*)",
+      "Bash(bun run lint)",
+      "Bash(bun run lint:*)"
     ]
   }
 }

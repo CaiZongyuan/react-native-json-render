@@ -228,7 +228,7 @@ export default function TodoList() {
     experimental_throttle: 50,
   });
 
-  const { tree, parseError, reset } = useTodolistTreeStream(messages);
+  const { tree, reset } = useTodolistTreeStream(messages);
 
   const isStreaming = status === "submitted" || status === "streaming";
 

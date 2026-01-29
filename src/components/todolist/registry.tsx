@@ -168,7 +168,6 @@ export function TodoButton({ element, onAction, loading }: ComponentRenderProps)
   const actionObj: Action = typeof action === "string" ? { name: action } : action;
 
   const bgColor = variant === "danger" ? color.danger : color.foreground;
-  const textColor = color.background;
 
   return (
     <Pressable

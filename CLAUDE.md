@@ -366,6 +366,47 @@ The app uses `@json-render/react`'s component registry system:
 - Use `Pressable` for buttons and touchable elements
 - Use StyleSheet for styles
 
+## Commit Guidelines
+
+**Before creating any commit or generating a commit message, you MUST:**
+
+1. **Run TypeScript type checking:**
+   ```bash
+   bun run typecheck
+   ```
+   - Ensure `tsc --noEmit` passes with zero errors
+   - Do NOT proceed if there are any type errors
+
+2. **Run ESLint:**
+   ```bash
+   bun run lint
+   ```
+   - Ensure ESLint passes with zero errors
+   - Fix all issues before proceeding
+   - Use `bun run lint -- --fix` for auto-fixable issues
+
+3. **Perform Linus-style code review:**
+   - Check code logic for correctness
+   - Verify edge cases are handled
+   - Ensure no obvious bugs or inefficiencies
+   - Check for proper error handling
+   - Verify the change does what it's supposed to do
+   - Look for potential security vulnerabilities
+
+4. **Only after all checks pass:**
+   - Generate a clear, concise commit message
+   - Do NOT include Co-Authored-By or any AI attribution in commits
+   - Focus the commit message on the "why" rather than the "what"
+
+**Commit message format:**
+```
+<type>: <brief description>
+
+<detailed explanation if needed>
+```
+
+Types: `feat`, `fix`, `refactor`, `style`, `docs`, `test`, `chore`
+
 ## Documentation Maintenance
 
 **When to Update Documentation:**
