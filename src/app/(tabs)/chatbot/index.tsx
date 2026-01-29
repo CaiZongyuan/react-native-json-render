@@ -55,15 +55,6 @@ export default function Chatbot() {
 
   const isStreaming = status === "submitted" || status === "streaming";
 
-  if (error) {
-    return (
-      <View className="flex-1 bg-[#0b0f19] justify-center items-center p-4">
-        <Text className="text-red-400 font-extrabold text-lg mb-2">Error</Text>
-        <Text className="text-gray-400 text-center">{error.message}</Text>
-      </View>
-    );
-  }
-
   const renderMessage = useCallback(
     ({ item }: { item: UIMessage }) => {
       const isUser = item.role === "user";
@@ -74,13 +65,13 @@ export default function Chatbot() {
       const text = getMessageText(item);
       const todoToolParts = item.parts.filter(
         (p) => p.type === `tool-${TODO_UI_TOOL_NAME}`,
-      ) as unknown as Array<{
+      ) as unknown as {
         toolCallId: string;
         state: string;
         input?: unknown;
         output?: unknown;
         errorText?: string;
-      }>;
+      }[];
 
       return (
         <View className="my-1.5">
@@ -149,8 +140,10 @@ export default function Chatbot() {
     [isStreaming],
   );
 
+  const nonSystemCount = messages.filter((m) => m.role !== "system").length;
+
   const renderListEmptyComponent = useCallback(() => {
-    const nonSystemCount = messages.filter((m) => m.role !== "system").length;
+    if (nonSystemCount > 0) return null;
     if (nonSystemCount > 0) return null;
 
     return (
@@ -182,7 +175,16 @@ export default function Chatbot() {
         </View>
       </View>
     );
-  }, [messages, isStreaming]);
+  }, [nonSystemCount, isStreaming]);
+
+  if (error) {
+    return (
+      <View className="flex-1 bg-[#0b0f19] justify-center items-center p-4">
+        <Text className="text-red-400 font-extrabold text-lg mb-2">Error</Text>
+        <Text className="text-gray-400 text-center">{error.message}</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView

@@ -37,7 +37,7 @@ function generateRandomData(region: string, dateRange: string): DashboardData {
     { label: "Other", value: Math.floor(revenue * 0.14) },
   ];
 
-  const statuses: Array<"completed" | "pending" | "failed"> = [
+  const statuses: ("completed" | "pending" | "failed")[] = [
     "completed",
     "pending",
     "failed",
@@ -117,6 +117,7 @@ function InnerLayout() {
       view_details: (params: Record<string, unknown>) =>
         Alert.alert("Details", JSON.stringify(params, null, 2)),
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

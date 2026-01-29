@@ -5,7 +5,7 @@ import { useMemo, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type TodoData = typeof INITIAL_DATA & {
-  todoAssistant?: { suggestions?: Array<{ text: string; selected?: boolean }> };
+  todoAssistant?: { suggestions?: { text: string; selected?: boolean }[] };
 };
 
 function InnerLayout() {

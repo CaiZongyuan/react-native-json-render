@@ -17,7 +17,7 @@ import { Text, View } from "react-native";
 
 function isSuggestionsShape(
   value: unknown,
-): value is Array<{ text?: unknown; selected?: unknown }> {
+): value is { text?: unknown; selected?: unknown }[] {
   return Array.isArray(value);
 }
 
