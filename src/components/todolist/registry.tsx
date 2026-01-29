@@ -1,8 +1,8 @@
 import type { Action } from "@json-render/core";
 import type { ComponentRenderProps, ComponentRegistry } from "@json-render/react";
-import { useData, useDataBinding } from "@json-render/react";
+import { useDataBinding, useDataValue } from "@json-render/react";
 import React, { useEffect, useRef, useState } from "react";
-import { Text, View, Pressable, ScrollView, Modal, TextInput, Animated } from "react-native";
+import { Text, View, Pressable, Modal, TextInput, Animated } from "react-native";
 
 const color = {
   background: "#0b0f19",
@@ -15,6 +15,15 @@ const color = {
   warning: "#f59e0b",
   info: "#60a5fa",
 };
+
+function normalizePath(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed.includes(".") && !trimmed.includes("/")) {
+    return "/" + trimmed.split(".").filter(Boolean).join("/");
+  }
+  return trimmed;
+}
 
 export function UnknownComponent({ element }: ComponentRenderProps) {
   return (
@@ -55,41 +64,66 @@ export function TodoText({ element }: ComponentRenderProps) {
 
 // Table component for todolist
 export function TodoTable({ element }: ComponentRenderProps) {
-  const { dataPath } = element.props as { dataPath: string };
-  const { data } = useData();
-  const tableData = data[dataPath.replace(/^\//, "")] as
-    | Record<string, unknown>[]
-    | undefined;
+  const { dataPath, showCompletedPath } = element.props as {
+    dataPath: string;
+    showCompletedPath?: string | null;
+  };
 
-  if (!Array.isArray(tableData) || tableData.length === 0) {
+  const normalizedDataPath = normalizePath(dataPath);
+  const [todos, setTodos] = useDataBinding<Record<string, unknown>[]>(normalizedDataPath);
+
+  const showCompleted =
+    useDataValue(normalizePath(showCompletedPath ?? "/settings/showCompleted")) ?? true;
+
+  const tableData = Array.isArray(todos) ? todos : [];
+  const visibleRows = showCompleted
+    ? tableData
+    : tableData.filter((t) => !(t.completed as boolean | undefined));
+
+  if (visibleRows.length === 0) {
     return <Text className="text-[#9ca3af] text-sm">No data</Text>;
   }
 
   return (
     <View className="border border-[#243041] rounded-xl overflow-hidden">
-      {tableData.map((row, idx) => {
+      {visibleRows.map((row, idx) => {
         const completed = row.completed as boolean | undefined;
         return (
-          <View
-            key={idx}
-            className={`flex-row items-center py-3 px-3 ${idx !== tableData.length - 1 ? "border-b border-[#243041]" : ""}`}
+          <Pressable
+            key={String(row.id ?? idx)}
+            onPress={() => {
+              const rowId = row.id;
+              const next = tableData.map((t) =>
+                rowId != null && t.id === rowId
+                  ? { ...t, completed: !(t.completed as boolean | undefined) }
+                  : t === row
+                    ? { ...t, completed: !(t.completed as boolean | undefined) }
+                    : t,
+              );
+              setTodos(next);
+            }}
+            className={`py-3 px-3 ${idx !== visibleRows.length - 1 ? "border-b border-[#243041]" : ""}`}
           >
-            <View
-              className={`w-5 h-5 rounded border mr-3 items-center justify-center ${completed ? "bg-[#22c55e] border-[#22c55e]" : "border-[#243041]"}`}
-            >
-              {completed && <Text className="text-[#0b0f19] text-xs">✓</Text>}
+            <View className="flex-row items-start">
+              <View
+                className={`w-5 h-5 rounded border mr-3 items-center justify-center ${completed ? "bg-[#22c55e] border-[#22c55e]" : "border-[#243041]"}`}
+              >
+                {completed && <Text className="text-[#0b0f19] text-xs">✓</Text>}
+              </View>
+              <Text
+                className={`flex-1 text-sm ${completed ? "text-[#9ca3af] line-through" : "text-[#e5e7eb]"}`}
+                style={{ flexShrink: 1 }}
+              >
+                {String(row.text ?? "")}
+              </Text>
             </View>
+
             <Text
-              className={`flex-1 text-sm ${completed ? "text-[#9ca3af] line-through" : "text-[#e5e7eb]"}`}
-            >
-              {String(row.text ?? "")}
-            </Text>
-            <Text
-              className={`text-xs ${completed ? "text-[#22c55e]" : "text-[#9ca3af]"}`}
+              className={`text-xs mt-1 ml-8 ${completed ? "text-[#22c55e]" : "text-[#9ca3af]"}`}
             >
               {completed ? "Done" : "Pending"}
             </Text>
-          </View>
+          </Pressable>
         );
       })}
     </View>
@@ -103,17 +137,18 @@ export function Checkbox({ element }: ComponentRenderProps) {
     bindPath: string;
   };
 
-  const [value, setValue] = useDataBinding<boolean>(bindPath.replace(/^\//, ""));
+  const [value, setValue] = useDataBinding<boolean>(normalizePath(bindPath));
+  const checked = Boolean(value);
 
   return (
     <Pressable
-      onPress={() => setValue(!value)}
+      onPress={() => setValue(!checked)}
       className="flex-row items-center py-2"
     >
       <View
-        className={`w-5 h-5 rounded border mr-3 items-center justify-center ${value ? "bg-[#22c55e] border-[#22c55e]" : "border-[#243041]"}`}
+        className={`w-5 h-5 rounded border mr-3 items-center justify-center ${checked ? "bg-[#22c55e] border-[#22c55e]" : "border-[#243041]"}`}
       >
-        {value && <Text className="text-[#0b0f19] text-xs font-bold">✓</Text>}
+        {checked && <Text className="text-[#0b0f19] text-xs font-bold">✓</Text>}
       </View>
       {!!label && (
         <Text className="text-[#e5e7eb] text-sm">{label}</Text>
@@ -270,7 +305,7 @@ export function TodoInput({ element }: ComponentRenderProps) {
     placeholder?: string | null;
   };
 
-  const [value, setValue] = useDataBinding<string>(bindPath.replace(/^\//, ""));
+  const [value, setValue] = useDataBinding<string>(normalizePath(bindPath));
 
   return (
     <View>
@@ -288,16 +323,37 @@ export function TodoInput({ element }: ComponentRenderProps) {
 
 // Stack layout
 export function TodoStack({ element, children }: ComponentRenderProps) {
-  const { gap } = element.props as { gap?: "sm" | "md" | "lg" | null };
+  const { gap, direction, align } = element.props as {
+    gap?: "sm" | "md" | "lg" | null;
+    direction?: "horizontal" | "vertical" | null;
+    align?: "start" | "center" | "end" | "stretch" | null;
+  };
   const gapSize = gap === "sm" ? 8 : gap === "lg" ? 20 : 12;
   const items = React.Children.toArray(children);
+  const isRow = (direction ?? "vertical") === "horizontal";
+  const alignItems =
+    align === "center"
+      ? "center"
+      : align === "end"
+        ? "flex-end"
+        : align === "stretch"
+          ? "stretch"
+          : align === "start"
+            ? "flex-start"
+            : isRow
+              ? "center"
+              : "stretch";
 
   return (
-    <View>
+    <View style={{ flexDirection: isRow ? "row" : "column", alignItems }}>
       {items.map((child, idx) => (
         <View
           key={idx}
-          style={idx !== items.length - 1 ? { marginBottom: gapSize } : {}}
+          style={
+            isRow
+              ? { marginRight: idx === items.length - 1 ? 0 : gapSize }
+              : { marginBottom: idx === items.length - 1 ? 0 : gapSize }
+          }
         >
           {child}
         </View>

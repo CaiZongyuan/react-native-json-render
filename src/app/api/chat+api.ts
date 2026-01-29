@@ -17,7 +17,6 @@ export async function POST(req: Request) {
         thinking: { type: "disabled" },
       },
     },
-    // 使用 onChunk 回调进行调试，不会消费流
     // onChunk: ({ chunk }) => {
     //   console.log("Chunk:", chunk);
     // },

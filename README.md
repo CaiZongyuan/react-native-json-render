@@ -2,7 +2,7 @@
 
 **English | [中文](README-zh.md)**
 
-A React Native app built with Expo Router featuring AI-powered JSON dashboard generation and AI chat capabilities.
+A React Native app built with Expo Router featuring AI-powered JSON dashboard generation, interactive TodoList, and AI chat capabilities.
 
 ## Tech Stack
 
@@ -10,9 +10,10 @@ A React Native app built with Expo Router featuring AI-powered JSON dashboard ge
 - **React** 19.1.0
 - **Expo Router** v6 (file-based routing + Native Tabs navigation)
 - **@json-render/core** & **@json-render/react** - JSON-driven UI rendering
-- **Vercel AI SDK** - AI chat integration
+- **Vercel AI SDK** - AI chat integration with tool calling support
 - **GLM-4.7** - Zhipu AI large language model (swappable with other models)
-- **Zod** - Component schema validation
+- **Zod** v4 - Component schema validation
+- **Tailwind CSS** v4 + **uniwind** - Universal styling for React Native
 - **TypeScript** (strict mode)
 - **Bun** - Package manager
 
@@ -59,18 +60,82 @@ Automatically generate React Native dashboard interfaces from natural language d
 | Divider    | Section divider                  | label                            |
 | Empty      | Empty state display              | title, description               |
 
+### AI TodoList Generator
+
+Standalone component showcase for JSON-driven todo/task management interfaces. Similar to the Dashboard Generator, it uses AI to generate interactive UI components from natural language descriptions.
+
+**Core Features:**
+
+- 8 built-in components (Title, Text, Table, Checkbox, Button, Confirm, Waiting, Input, Stack)
+- JSONL (JSON Lines) incremental rendering with real-time component display
+- Interactive todo list with show/hide completed toggle
+- Demo mode with pre-built component showcase
+- Mock data loading for testing
+
+**Available Components:**
+
+| Component  | Description                      | Main Props                                |
+| ---------- | -------------------------------- | ----------------------------------------- |
+| Title      | Heading text                     | text                                      |
+| Text       | Text paragraph with variants     | content, variant (default/muted/success/warning/danger) |
+| Table      | Interactive todo list            | dataPath, showCompletedPath                |
+| Checkbox   | Checkbox input                   | label, bindPath                           |
+| Button     | Action button                    | label, variant (primary/secondary/danger), action |
+| Confirm    | Button with confirmation dialog  | label, action, confirm (title, message)    |
+| Waiting    | Loading spinner with text        | text                                      |
+| Input      | Text input field                 | label, bindPath, placeholder               |
+| Stack      | Flex layout container            | gap (sm/md/lg), direction, align           |
+
+**Quick Prompts:**
+
+- "Simple todo list with checkboxes"
+- "Task manager with categories"
+- "Daily planner with time slots"
+- "Shopping checklist with sections"
+
 ### Tab Navigation
 
-- **Home** - Main landing page
-- **Render** - AI-powered JSON dashboard generator
-- **Chatbot** - AI chat interface
+- **Dashboard** - AI-powered JSON dashboard generator with 15 components
+- **TodoList** - Standalone TodoList component showcase with AI generation
+- **Chatbot** - AI chat interface with interactive TodoList tool calling
 
-### AI Chat
+### AI Chatbot with TodoList Tool
 
-Integrated with Zhipu GLM-4.7 large language model with streaming support:
+Interactive chat interface powered by GLM-4.7 with AI tool calling:
 
-- API endpoint: `/api/chat`
-- Streaming responses via Vercel AI SDK
+**Core Features:**
+
+- Streaming chat responses via Vercel AI SDK
+- Interactive TodoList UI card component
+- AI automatically detects todo-related requests
+- Multi-select suggestions for quick task addition
+- Custom todo input with action buttons
+- Show/hide completed tasks toggle
+
+**TodoList UI Components:**
+
+| Component  | Description                      | Props                         |
+| ---------- | -------------------------------- | ----------------------------- |
+| Title      | Heading text                     | text                          |
+| Text       | Paragraph with variant support   | content, variant              |
+| Table      | Interactive todo list            | dataPath, showCompletedPath   |
+| Checkbox   | Checkbox input                   | label, bindPath               |
+| Button     | Action button                    | label, variant, action        |
+| Input      | Text input field                 | label, bindPath, placeholder  |
+| Stack      | Flex layout container            | gap, direction, align         |
+
+**Quick Prompts:**
+
+- "What is React Native?"
+- "Explain Expo Router"
+- "How to use Tailwind in React Native?"
+- "What is JSON rendering?"
+- "Show my todo list and suggest tasks"
+
+**Tool Integration:**
+
+- API endpoint: `/api/chatbot`
+- Custom `todo_ui` tool for rendering interactive UI cards
 - Requires `GLM_API_KEY` environment variable
 
 ### Model Replacement
@@ -143,24 +208,40 @@ expo-json-render/
 │   │   ├── _layout.tsx        # Root layout
 │   │   ├── (tabs)/            # Tabs navigator group
 │   │   │   ├── _layout.tsx    # Tabs layout
-│   │   │   ├── index.tsx      # Home screen
 │   │   │   ├── dashboard/     # AI Dashboard Generator (page only)
 │   │   │   │   ├── _layout.tsx # Dashboard layout
 │   │   │   │   └── index.tsx   # Main interface
-│   │   │   └── chatbot/       # AI Chat feature
+│   │   │   ├── todolist/      # TodoList component showcase
+│   │   │   │   └── index.tsx   # TodoList interface
+│   │   │   └── chatbot/       # AI Chatbot with TodoList
+│   │   │       ├── _layout.tsx # Chatbot layout
+│   │   │       └── index.tsx   # Chat interface
 │   │   └── api/               # API routes
-│   │       └── chat+api.ts    # Chat streaming endpoint
+│   │       ├── chat+api.ts    # Dashboard/TodoList chat streaming
+│   │       └── chatbot+api.ts # Chatbot with tool calling
 │   ├── components/            # Reusable components
-│   │   └── dashboard/         # Dashboard components
-│   │       ├── registry.tsx   # Component registry (15 components)
-│   │       └── dashboardCatalog.ts # Component schema catalog
+│   │   ├── chatbot/           # Chatbot components
+│   │   │   └── TodoAssistantCard.tsx # Interactive UI card
+│   │   ├── dashboard/         # Dashboard components
+│   │   │   ├── registry.tsx   # Component registry (15 components)
+│   │   │   └── dashboardCatalog.ts # Component schema catalog
+│   │   └── todolist/          # TodoList components
+│   │       └── registry.tsx   # TodoList component registry (8 components)
 │   ├── hooks/                 # Custom React hooks
-│   │   └── useDashboardTreeStream.ts # JSONL stream parser
+│   │   ├── useDashboardTreeStream.ts # JSONL stream parser
+│   │   └── useTodolistTreeStream.ts  # TodoList JSONL parser
 │   ├── lib/                   # Library code
-│   │   └── dashboard/         # Dashboard library
-│   │       ├── systemPrompt.ts # AI system prompt generator
-│   │       ├── initialData.ts  # Sample data
-│   │       └── mockPatches.ts  # Mock JSONL patches
+│   │   ├── chatbot/           # Chatbot library
+│   │   │   └── systemPrompt.ts # Chatbot system prompt
+│   │   ├── dashboard/         # Dashboard library
+│   │   │   ├── systemPrompt.ts # AI system prompt generator
+│   │   │   ├── initialData.ts  # Sample data
+│   │   │   └── mockPatches.ts  # Mock JSONL patches
+│   │   └── todolist/          # TodoList library
+│   │       ├── systemPrompt.ts     # TodoList system prompt
+│   │       ├── initialData.ts      # Sample data
+│   │       ├── mockPatches.ts      # Mock JSONL patches
+│   │       └── todoAssistantTool.ts # Todo UI tool & tree builder
 │   └── utils/                 # Utility functions
 │       └── urlGenerator.ts    # API URL generation
 ├── assets/
